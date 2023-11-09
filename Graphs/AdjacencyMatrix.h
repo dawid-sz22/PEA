@@ -19,6 +19,7 @@ public:
     int** getWsk();
     int getNodesCount();
     int getStartNode();
+
 };
 
 

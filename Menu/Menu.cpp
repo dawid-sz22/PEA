@@ -5,6 +5,7 @@
 #include "../BranchAndBound/BranchAndBound.h"
 #include <iostream>
 #include <fstream>
+#include <thread>
 
 using namespace std;
 
@@ -137,6 +138,7 @@ void Menu::showMenuManual() {
         cout << "3. Wyswietl graf\n";
         cout << "4. Algorytm Brute force - Przeglad zupelny\n";
         cout << "5. Algorytm Branch&Bound\n";
+        cout << "6. Algorytm Branch&Bound z limitem czasowym\n";
         cout << "0. Wroc\n";
         cout << "Wybierz opcje: ";
         cin >> chooseOption; //wybrana opcje
@@ -225,6 +227,58 @@ void Menu::showMenuManual() {
 
                     delete bb;
                     delete [] pathTable;
+                }
+            }
+                break;
+            case 6: //B&B z limitem czasowym
+            {
+                if (matrix == nullptr) {
+                    cout << "NIE WCZYTANO GRAFU!\n";
+                } else {
+                    BranchAndBound* bb = new BranchAndBound(matrix);
+
+                    atomic<bool> stopFlag (false);
+                    auto stopFunction = [](atomic<bool> &stopFlag)
+                    {
+                        for (int i = 0; i < 3; ++i) {
+                            std::this_thread::sleep_for(chrono::seconds (10));
+                            if (stopFlag.load())
+                                return;
+                        }
+                        stopFlag.store(true);
+                    };
+                    thread waitThread(stopFunction, ref(stopFlag));
+                    timer.run();
+
+                    list<NodeBB*> listEnd = bb->main(stopFlag);
+
+                    timer.stop();
+                    waitThread.detach();
+                    if (listEnd.empty())
+                    {
+                        cout <<"Przekroczono ustalony limit czasu! "<<endl;
+                    } else
+                    {
+                        int * pathTable = new int[matrix->getNodesCount()];
+                        NodeBB* helpNode = listEnd.back();
+                        cout << endl << "Czas (BB):" << timer.getTimeMs() << " ms" << endl;
+                        cout << "Optymalna sciezka:" << endl;
+                        for (int i = matrix->getNodesCount() - 1; i >= 0; --i) {
+                            pathTable[i] = helpNode->numberOfNode;
+                            helpNode = helpNode->father;
+                        }
+                        for (int i = 0; i < matrix->getNodesCount(); ++i) {
+                            cout << pathTable[i] << " -> ";
+                        }
+
+                        cout << matrix->getStartNode() << "\nKoszt: ";
+                        cout << listEnd.back()->lowerBound <<endl;
+
+                        delete [] pathTable;
+                    }
+
+
+                    delete bb;
                 }
             }
                 break;

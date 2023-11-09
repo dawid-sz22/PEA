@@ -1,7 +1,7 @@
 #include "Generator.h"
 
 
-Generator::Generator():rd(),gen(rd()), dist(0, 500)
+Generator::Generator():rd(),gen(rd()), dist(0, 100)
 {
 }
 
