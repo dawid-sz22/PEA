@@ -2,7 +2,8 @@
 #include "../Graphs/AdjacencyMatrix.h"
 #include "../Tools/FileClass.h"
 #include "../Tools/Timer.h"
-#include "../BranchAndBound/BranchAndBound.h"
+#include "../Algorithms/BranchAndBound.h"
+#include "../Algorithms/BruteForce.h"
 #include <iostream>
 #include <fstream>
 #include <thread>
@@ -27,7 +28,7 @@ void Menu::showMenu()
                 Menu::showMenuManual();
                 break;
             case 2:
-//                Menu::showMenuAutomatic();
+                Menu::showMenuAutomatic();
                 break;
             case 0:
                 break;
@@ -77,12 +78,15 @@ void Menu::showMenuAutomatic() {
                         for (int k = 0; k < 100; ++k) {
                             cout <<"TEST (BF): " <<data[i] <<" wierzcholkow, "<<k<<" instancja: ";
                             matrix = new AdjacencyMatrix(data[i],0, true);
+                            BruteForce* bf = new BruteForce(matrix);
                             timer.run();
-                            matrix->bruteForce();
+                            int* heap = bf->main();
                             timer.stop();
                             time += timer.getTimeMs();
                             cout << "X\n";
                             delete matrix;
+                            delete bf;
+                            delete [] heap;
                         }
                     file << time/100 << '\n';
                     time = 0.0;
@@ -177,8 +181,9 @@ void Menu::showMenuManual() {
                 if (matrix == nullptr) {
                     cout << "NIE WCZYTANO GRAFU!\n";
                 } else {
+                    BruteForce* bf = new BruteForce(matrix);
                     timer.run();
-                    int *heap = matrix->bruteForce();
+                    int *heap = bf->main();
                     timer.stop();
                     int cost = 0;
                     cout << endl << "Czas (Brute Force):" << timer.getTimeMs() << " ms" << endl;
@@ -192,6 +197,8 @@ void Menu::showMenuManual() {
                     }
                     cost += matrix->getWsk()[heap[matrix->getNodesCount()-1]][matrix->getStartNode()];
                     cout << cost;
+                    delete[] heap;
+                    delete bf;
                 }
             }
                 break;

@@ -46,55 +46,6 @@ AdjacencyMatrix::AdjacencyMatrix(int nodes,int start, bool random)
 
 }
 
-int* AdjacencyMatrix::bruteForce() {
-    int* heap =  new int[nodesCount];           //stworzenie stosu, który będzie zawierać kolejne wierzchołki trasy komiwojążera
-    int* endHeap = new int[nodesCount];         //końcowa ścieżka
-    bool* visitedNodes = new bool[nodesCount];  //tablica, która przechowuje odwiedzone już wierzchołki
-    for (int i = 0; i < nodesCount; ++i) {
-        visitedNodes[i] = false;
-        endHeap[i] = -1;
-    }
-    int heapSize = 0;                           //aktualny rozmiar stosu
-    int pathWeightEnd = INT32_MAX;              //koszt wyliczonej końcowej drogi
-    int pathWeightHelp = 0;                     //koszt wyliczonej tymczasowej drogi
-
-    /// ZACZYNAMY POSZUKIWANIA OD WIERZCOHŁKA POCZĄTKOWEGO (def. 0), i przeszukujemy wszystkie możliwe rozwiązania rekurencyjnie
-    nextNodeBF(startNode, heap, endHeap, heapSize,visitedNodes,pathWeightHelp,pathWeightEnd);
-
-    return endHeap;                             //zwracamy końcową optymalna ścieżkę
-}
-
-void AdjacencyMatrix::nextNodeBF(int node, int* heap, int* endHeap, int& heapSize, bool* visitedNodes,int& pathWeightHelp, int& pathWeightEnd) {
-    heap[heapSize++] = node;                    //zapisujemy nowy wierzchołek na stosie
-
-    if(heapSize < nodesCount)                   //jeśli rozmiar stosu, jest mniejszy od ilości wierzchołków -->
-    {                                           //to oznacza to,że nie znaleziono jeszcze całkowitej ścieżki
-        visitedNodes[node] = true;              //oznaczamy jako odwiedzony
-        for (int i = 0; i < nodesCount; ++i) {  //przeglądanie wszystkich sąsiadów, aby znaleźć wierzchołek, który jeszcze nie jest połączony
-            if (!visitedNodes[i])
-            {
-                pathWeightHelp += wsk[node][i]; //dodaj koszt do tymczasowej drogi
-                nextNodeBF(i,heap,endHeap,heapSize,visitedNodes,pathWeightHelp,pathWeightEnd);    //szukaj zatem kolejnego wierzchołka
-                pathWeightHelp -= wsk[node][i]; //zakończono rozważanie wierzchołka i, zatem usuń wagę krawędzi która łączy node z i
-            }
-        }
-        visitedNodes[node] = false;             //brak nowych kandydatów na ścieżkę --> odznacz wierzhołek
-        heapSize--;                             //zmiejsz stos o 1, z powodu braku nowych rozwiązań z tego wierzchołka
-    }
-    else                                        //rozmiar stosu jest równy ilości wierzchołków
-    {                                           //--> dotarto do końca możliwych rozwiązań w danej gałęzi
-        pathWeightHelp += wsk[node][startNode];
-        if (pathWeightHelp < pathWeightEnd)      //jeśli aktualna suma jest mniejsza od aktualnie optymalnego rozwiązania
-        {                                        //---> zamień dane
-            pathWeightEnd = pathWeightHelp;
-            for (int i = 0; i < heapSize; ++i) {
-               endHeap[i] = heap[i];
-            }
-        }
-        pathWeightHelp -= wsk[node][startNode]; //policzono cały koszt ścieżki, która już nie ma dalszego ciągu, zatem usuń ostatnią wage
-        heapSize--;                             //zmniejszamy rozmiar stosu (usuwamy tym samym ostatni wierzchołek)
-    }
-}
 
 int **AdjacencyMatrix::getWsk() {
     return wsk;

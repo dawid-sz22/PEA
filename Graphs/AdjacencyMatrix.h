@@ -13,8 +13,6 @@ public:
 
     void printMatrix();
 
-    int* bruteForce();
-    void nextNodeBF(int node,int* heap,int* heapEnd, int& heapSize, bool* visitedNodes,int& pathWeightHelp, int& pathWeight);
 
     int** getWsk();
     int getNodesCount();
