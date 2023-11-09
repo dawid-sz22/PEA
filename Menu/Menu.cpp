@@ -240,7 +240,7 @@ void Menu::showMenuManual() {
                     atomic<bool> stopFlag (false);
                     auto stopFunction = [](atomic<bool> &stopFlag)
                     {
-                        for (int i = 0; i < 3; ++i) {
+                        for (int i = 0; i < 2; ++i) {
                             std::this_thread::sleep_for(chrono::seconds (10));
                             if (stopFlag.load())
                                 return;
