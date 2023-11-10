@@ -4,6 +4,7 @@
 #include "../Tools/Timer.h"
 #include "../Algorithms/BranchAndBound.h"
 #include "../Algorithms/BruteForce.h"
+#include "../Algorithms/DynamicPrograming.h"
 #include <iostream>
 #include <fstream>
 #include <thread>
@@ -40,29 +41,15 @@ void Menu::showMenu()
 }
 
 void Menu::showMenuAutomatic() {
-    AdjacencyMatrix* matrix = nullptr;
-    Timer timer;
-    double time= 0.0;
-    fstream file;
-
     int chooseOption = 0;
-    int dataCount;
-
-    cout << "Podaj rozmiar problemu (X problemow po 100 losowych reprezentacji) : ";
-    cin >> dataCount;
-
-    int* data = new int [dataCount];
-
-    for (int i = 0; i < dataCount; ++i) {
-        cout << i+1 << ": ";
-        cin >> data[i];
-    }
-
+    int dataCount = 0;
 
     do
     {
         cout << "1. Brute Force\n";
         cout << "2. Branch&Bound\n";
+        cout << "3. DynamicPrograming\n";
+        cout << "4. All\n";
         cout << "0. Wroc\n";
         cout << "Wybierz opcje: ";
         cin >> chooseOption; //wybrana opcje
@@ -71,53 +58,82 @@ void Menu::showMenuAutomatic() {
         {
             case 1: //Brute Force
             {
-                file.open("../Files/Output/test_BF.txt",ios::out);
-                //ilość wierzchołków;średnia z 100 pomiarów
+                cout << "Podaj rozmiar problemu (X problemow po 100 losowych reprezentacji) : ";
+                cin >> dataCount;
+                int* data = new int [dataCount];
+
                 for (int i = 0; i < dataCount; ++i) {
-                    file << data[i] <<';';
-                        for (int k = 0; k < 100; ++k) {
-                            cout <<"TEST (BF): " <<data[i] <<" wierzcholkow, "<<k<<" instancja: ";
-                            matrix = new AdjacencyMatrix(data[i],0, true);
-                            BruteForce* bf = new BruteForce(matrix);
-                            timer.run();
-                            int* heap = bf->main();
-                            timer.stop();
-                            time += timer.getTimeMs();
-                            cout << "X\n";
-                            delete matrix;
-                            delete bf;
-                            delete [] heap;
-                        }
-                    file << time/100 << '\n';
-                    time = 0.0;
+                    cout << i+1 << ": ";
+                    cin >> data[i];
                 }
-                file.close();
+                autoBF(data,dataCount);
             }
                 break;
             case 2: //Branch&Bound
             {
-                file.open("../Files/Output/test_BB.txt",ios::out);
-                //ilość wierzchołków;średnia z 100 pomiarów
+                cout << "Podaj rozmiar problemu (X problemow po 100 losowych reprezentacji) : ";
+                cin >> dataCount;
+                int* data = new int [dataCount];
+
                 for (int i = 0; i < dataCount; ++i) {
-                    file << data[i] <<';';
-                    for (int k = 0; k < 100; ++k) {
-                        cout <<"TEST (BB): " <<data[i] <<" wierzcholkow, "<<k<<" instancja: ";
-                        matrix = new AdjacencyMatrix(data[i],0, true);
-                        BranchAndBound* bb = new BranchAndBound(matrix);
-                        timer.run();
-                        bb->main();
-                        timer.stop();
-                        time += timer.getTimeMs();
-                        cout << "X\n";
-                        delete matrix;
-                        delete bb;
-                    }
-                    file << time/100 << '\n';
-                    time = 0.0;
+                    cout << i+1 << ": ";
+                    cin >> data[i];
                 }
-                file.close();
+                autoBB(data,dataCount);
             }
                 break;
+            case 3: //DP
+            {
+                cout << "Podaj rozmiar problemu (X problemow po 100 losowych reprezentacji) : ";
+                cin >> dataCount;
+                int* data = new int [dataCount];
+
+                for (int i = 0; i < dataCount; ++i) {
+                    cout << i+1 << ": ";
+                    cin >> data[i];
+                }
+                autoDP(data,dataCount);
+            }
+            case 4: //all
+            {
+                int dataCountBF = 0;
+                int dataCountBB = 0;
+                int dataCountDP = 0;
+
+
+                cout << "Podaj rozmiar problemu (X problemow po 100 losowych reprezentacji) dla BruteForce: ";
+                cin >> dataCountBF;
+                int* dataBF = new int [dataCountBF];
+
+                for (int i = 0; i < dataCountBF; ++i) {
+                    cout << i+1 << ": ";
+                    cin >> dataBF[i];
+                }
+
+                cout << "Podaj rozmiar problemu (X problemow po 100 losowych reprezentacji) dla DynamicPrograming: ";
+                cin >> dataCountDP;
+                int* dataDP = new int [dataCountDP];
+
+                for (int i = 0; i < dataCountDP; ++i) {
+                    cout << i+1 << ": ";
+                    cin >> dataDP[i];
+                }
+
+                cout << "Podaj rozmiar problemu (X problemow po 100 losowych reprezentacji) dla Branch&Bound: ";
+                cin >> dataCountBB;
+                int* dataBB = new int [dataCountBB];
+
+
+                for (int i = 0; i < dataCountBB; ++i) {
+                    cout << i+1 << ": ";
+                    cin >> dataBB[i];
+                }
+
+
+                autoBF(dataBF,dataCountBF);
+                autoDP(dataDP,dataCountDP);
+                autoBB(dataBB,dataCountBB);
+            }
             case 0:
                 system("cls");
                 break;
@@ -125,7 +141,7 @@ void Menu::showMenuAutomatic() {
                 cout << endl << "Podano niepoprawna opcje!" << endl;
                 break;
         }
-        cout << endl << endl;
+        cout << endl;
     } while (chooseOption);
 }
 
@@ -143,6 +159,7 @@ void Menu::showMenuManual() {
         cout << "4. Algorytm Brute force - Przeglad zupelny\n";
         cout << "5. Algorytm Branch&Bound\n";
         cout << "6. Algorytm Branch&Bound z limitem czasowym\n";
+        cout << "7. Algorytm DynamicPrograming\n";
         cout << "0. Wroc\n";
         cout << "Wybierz opcje: ";
         cin >> chooseOption; //wybrana opcje
@@ -228,10 +245,7 @@ void Menu::showMenuManual() {
                     cout << matrix->getStartNode() << "\nKoszt: ";
                     cout << listEnd.back()->lowerBound <<endl;
 
-                    for (NodeBB* node:listEnd) {
-                        delete node;
-                    }
-
+                    bb->clear();
                     delete bb;
                     delete [] pathTable;
                 }
@@ -284,8 +298,25 @@ void Menu::showMenuManual() {
                         delete [] pathTable;
                     }
 
-
+                    bb->clear();
                     delete bb;
+                }
+            }
+                break;
+            case 7:
+            {
+                if (matrix == nullptr) {
+                    cout << "NIE WCZYTANO GRAFU!\n";
+                } else {
+                    DynamicPrograming* dp = new DynamicPrograming(matrix);
+
+                    timer.run();
+                    dp->main();
+                    timer.stop();
+
+                    cout << endl << "Czas (DP):" << timer.getTimeMs() << " ms" << endl;
+                    dp->printResults();
+                    delete dp;
                 }
             }
                 break;
@@ -301,4 +332,113 @@ void Menu::showMenuManual() {
 
     //usuń tablice po zakonczeniu
     delete matrix;
+}
+
+void Menu::autoBF(int* data, int dataCount)
+{
+    double time= 0.0;
+    fstream file;
+    Timer timer;
+    AdjacencyMatrix* matrix;
+
+    file.open("../Files/Output/test_BF.txt",ios::out);
+    //ilość wierzchołków;średnia z 100 pomiarów
+    for (int i = 0; i < dataCount; ++i) {
+        file << data[i] <<';';
+        for (int k = 0; k < 100; ++k) {
+            cout <<"TEST (BF): " <<data[i] <<" wierzcholkow, "<<k<<" instancja: ";
+            matrix = new AdjacencyMatrix(data[i],0, true);
+            BruteForce* bf = new BruteForce(matrix);
+            timer.run();
+            int* heap = bf->main();
+            timer.stop();
+            time += timer.getTimeMs();
+            cout << "X\n";
+            delete matrix;
+            delete bf;
+            delete [] heap;
+        }
+        file << time/100 << '\n';
+        time = 0.0;
+    }
+    file.close();
+}
+
+void Menu::autoBB(int *data, int dataCount) {
+    double time= 0.0;
+    fstream file;
+    Timer timer;
+    AdjacencyMatrix* matrix;
+
+    file.open("../Files/Output/test_BB.txt",ios::out);
+    //ilość wierzchołków;średnia z 100 pomiarów;ilość obliczonych w czasie 20s
+    for (int i = 0; i < dataCount; ++i) {
+        file << data[i] <<';';
+        int counter = 0;
+        for (int k = 0; k < 100; ++k) {
+            cout <<"TEST (BB): " <<data[i] <<" wierzcholkow, "<<k<<" instancja: ";
+            matrix = new AdjacencyMatrix(data[i],0, true);
+            BranchAndBound* bb = new BranchAndBound(matrix);
+            atomic<bool> stopFlag (false);
+            auto stopFunction = [](atomic<bool> &stopFlag)
+            {
+                //16_000ms
+                for (int i = 0; i < 16000; ++i) {
+                    std::this_thread::sleep_for(chrono::milliseconds (1));
+                    if (stopFlag.load())
+                        return;
+                }
+                stopFlag.store(true);
+
+            };
+            thread waitThread(stopFunction, ref(stopFlag));
+            timer.run();
+
+            list<NodeBB*> listEnd = bb->main(stopFlag);
+            timer.stop();
+            waitThread.detach();
+
+            if (!listEnd.empty())
+            {
+                time += timer.getTimeMs();
+                counter++;
+                cout << "X\n";
+            } else
+                cout << " -\n";
+
+            bb->clear();
+            delete matrix;
+            delete bb;
+        }
+        file << time/counter << ";" <<counter <<'\n';
+        time = 0.0;
+    }
+    file.close();
+}
+
+void Menu::autoDP(int *data, int dataCount) {
+    double time= 0.0;
+    fstream file;
+    Timer timer;
+    AdjacencyMatrix* matrix;
+    file.open("../Files/Output/test_DP.txt",ios::out);
+    //ilość wierzchołków;średnia z 100 pomiarów
+    for (int i = 0; i < dataCount; ++i) {
+        file << data[i] <<';';
+        for (int k = 0; k < 100; ++k) {
+            cout <<"TEST (DP): " <<data[i] <<" wierzcholkow, "<<k<<" instancja: ";
+            matrix = new AdjacencyMatrix(data[i],0, true);
+            DynamicPrograming* dp = new DynamicPrograming(matrix);
+            timer.run();
+            dp->main();
+            timer.stop();
+            time += timer.getTimeMs();
+            cout << "X\n";
+            delete matrix;
+            delete dp;
+        }
+        file << time/100 << '\n';
+        time = 0.0;
+    }
+    file.close();
 }

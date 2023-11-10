@@ -7,21 +7,6 @@ using namespace std;
 BranchAndBound::BranchAndBound(AdjacencyMatrix *matrix) : matrix(matrix)
 {}
 list<NodeBB *> BranchAndBound::main(std::atomic<bool> &stopFlag) {
-    //stworzenie struktury do implemenetacji kolejki priorytetowej, aby móc sortować obiekty po zmiennych "lowerBound"
-    struct compareLowerBound {
-        bool operator()(NodeBB* const & n1, NodeBB* const & n2)
-        {
-            return n1->lowerBound > n2->lowerBound;
-        }
-    };
-    //stworzenie kolejki priorytetowej do sortowania wierzchołków po zmiennej lowerBound
-    priority_queue<NodeBB*, vector<NodeBB*>,compareLowerBound> queue;
-
-    //Lista, która zawiera wierzchołki rozszerzone, które należy jeszcze usunąc
-    //(lista zawiera również w sobie wierzchołki, które są zawarte w ścieżce, dlatego też zwracamy tą listę
-    //jako wynik funkcji
-    list<NodeBB*> listToDelete;
-
     //stworzenie pomocniczego wierzchołka, który będzie imitował ojca korzenia
     NodeBB* root = new NodeBB(matrix->getStartNode(),0, matrix->getNodesCount(), nullptr);
 
@@ -50,7 +35,6 @@ list<NodeBB *> BranchAndBound::main(std::atomic<bool> &stopFlag) {
         for (int i = 0; i < matrix->getNodesCount(); ++i) {
             if (stopFlag.load())
             {
-                stopFlag.store(true);
                 while (!queue.empty())
                 {
                     //usuwanie wierzchołków z pamięci, z kolejki
@@ -80,35 +64,14 @@ list<NodeBB *> BranchAndBound::main(std::atomic<bool> &stopFlag) {
 
     listToDelete.push_back(nodeEnd);
 
-    while (!queue.empty())
-    {
-        //usuwanie wierzchołków z pamięci, z kolejki
-        nodeFromQueue = queue.top();
-        queue.pop();
-        delete nodeFromQueue;
-    }
 
+
+    stopFlag.store(true);
     return listToDelete;
 }
 
 
 list<NodeBB*> BranchAndBound::main() {
-    //stworzenie struktury do implemenetacji kolejki priorytetowej, aby móc sortować obiekty po zmiennych "lowerBound"
-    struct compareLowerBound {
-        bool operator()(NodeBB* const & n1, NodeBB* const & n2)
-        {
-            return n1->lowerBound > n2->lowerBound;
-        }
-    };
-    //stworzenie kolejki priorytetowej do sortowania wierzchołków po zmiennej lowerBound
-    auto* queue  = new priority_queue<NodeBB*, vector<NodeBB*>,compareLowerBound>;
-
-    //Lista, która zawiera wierzchołki rozszerzone, które należy jeszcze usunąc
-    //(lista zawiera również w sobie wierzchołki, które są zawarte w ścieżce, dlatego też zwracamy tą listę
-    //jako wynik funkcji
-    list<NodeBB*> listToDelete;
-
-
     //stworzenie pomocniczego wierzchołka, który będzie imitował ojca korzenia
     NodeBB* root = new NodeBB(matrix->getStartNode(),0, matrix->getNodesCount(), nullptr);
 
@@ -125,40 +88,31 @@ list<NodeBB*> BranchAndBound::main() {
     ///Zaczynamy od obliczenia macierzy korzenia i jego LB (lowerBound)
     countMatrix(root, nullptr);
 
-    queue->push(root);
+    queue.push(root);
 
     NodeBB* newNode;
     NodeBB* nodeFromQueue;
 
-    while (queue->top()->level != matrix->getNodesCount()-1) {
-        nodeFromQueue = queue->top();
-        queue->pop();    //usuwamy wierzchołek z kolejki
+    while (queue.top()->level != matrix->getNodesCount()-1) {
+        nodeFromQueue = queue.top();
+        queue.pop();    //usuwamy wierzchołek z kolejki
+        listToDelete.push_back(nodeFromQueue);
         for (int i = 0; i < matrix->getNodesCount(); ++i) {
             //szukamy wolnych dróg z wylosowanego wierzchołka
             if (nodeFromQueue->table[nodeFromQueue->numberOfNode][i] != INT32_MAX) {
                 newNode = new NodeBB(i, nodeFromQueue->level + 1, matrix->getNodesCount(), nodeFromQueue);
                 blockMatrix(newNode, nodeFromQueue);
                 countMatrix(newNode, nodeFromQueue);
-                queue->push(newNode);    //dodajemy do kolejki nowy wierzchołek
+                queue.push(newNode);    //dodajemy do kolejki nowy wierzchołek
             }
         }
-        listToDelete.push_back(nodeFromQueue);
     }
     ///Znaleziono liść, który jest jednocześnie lowerBound
-    NodeBB* nodeEnd = queue->top();
-    queue->pop();
+    NodeBB* nodeEnd = queue.top();
+    queue.pop();
 
     listToDelete.push_back(nodeEnd);
 
-    while (!queue->empty())
-    {
-        //usuwanie wierzchołków z pamięci, z kolejki
-        nodeFromQueue = queue->top();
-        queue->pop();
-        delete nodeFromQueue;
-    }
-
-    delete queue;
     return listToDelete;
 }
 
@@ -224,5 +178,21 @@ void BranchAndBound::blockMatrix(NodeBB *node, NodeBB* father) {
     node->table[node->numberOfNode][matrix->getStartNode()] = INT32_MAX;  //Blokowanie powrotu do wierzchołka początkowego
 
 }
+
+void BranchAndBound::clear() {
+    NodeBB* nodeFromQueue;
+    while (!queue.empty())
+    {
+        //usuwanie wierzchołków z pamięci, z kolejki
+        nodeFromQueue = queue.top();
+        queue.pop();
+        delete nodeFromQueue;
+    }
+
+    for (NodeBB* node: listToDelete) {
+        delete node;
+    }
+}
+
 
 
