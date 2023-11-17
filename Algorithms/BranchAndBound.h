@@ -13,6 +13,10 @@
 struct compareLowerBound {
     bool operator()(NodeBB* const & n1, NodeBB* const & n2)
     {
+        if (n1->lowerBound == n2->lowerBound)
+        {
+            return n1->level < n2->level;
+        }
         return n1->lowerBound > n2->lowerBound;
     }
 };
@@ -24,13 +28,16 @@ class BranchAndBound {
     //(lista zawiera również w sobie wierzchołki, które są zawarte w ścieżce, dlatego też zwracamy tą listę
     //jako wynik funkcji
     std::list<NodeBB*> listToDelete;
+
+    int upperBound = INT32_MAX;
 public:
     BranchAndBound(AdjacencyMatrix* matrix);
 
     std::list<NodeBB*> main();
-    std::list<NodeBB*> main(std::atomic<bool> &stopFlag);
+    std::list<NodeBB*> mainStop();
     void countMatrix(NodeBB* node, NodeBB* father);
     void blockMatrix(NodeBB *node, NodeBB* father);
+    void findUpperBound();
     void clear();
 
 };

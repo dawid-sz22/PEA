@@ -258,23 +258,11 @@ void Menu::showMenuManual() {
                 } else {
                     BranchAndBound* bb = new BranchAndBound(matrix);
 
-                    atomic<bool> stopFlag (false);
-                    auto stopFunction = [](atomic<bool> &stopFlag)
-                    {
-                        for (int i = 0; i < 2; ++i) {
-                            std::this_thread::sleep_for(chrono::seconds (10));
-                            if (stopFlag.load())
-                                return;
-                        }
-                        stopFlag.store(true);
-                    };
-                    thread waitThread(stopFunction, ref(stopFlag));
                     timer.run();
 
-                    list<NodeBB*> listEnd = bb->main(stopFlag);
+                    list<NodeBB*> listEnd = bb->mainStop();
 
                     timer.stop();
-                    waitThread.detach();
                     if (listEnd.empty())
                     {
                         cout <<"Przekroczono ustalony limit czasu! "<<endl;
@@ -379,29 +367,17 @@ void Menu::autoBB(int *data, int dataCount) {
             cout <<"TEST (BB): " <<data[i] <<" wierzcholkow, "<<k<<" instancja: ";
             matrix = new AdjacencyMatrix(data[i],0, true);
             BranchAndBound* bb = new BranchAndBound(matrix);
-            atomic<bool> stopFlag (false);
-            auto stopFunction = [](atomic<bool> &stopFlag)
-            {
-                //16_000ms
-                for (int i = 0; i < 16000; ++i) {
-                    std::this_thread::sleep_for(chrono::milliseconds (1));
-                    if (stopFlag.load())
-                        return;
-                }
-                stopFlag.store(true);
 
-            };
-            thread waitThread(stopFunction, ref(stopFlag));
             timer.run();
 
-            list<NodeBB*> listEnd = bb->main(stopFlag);
+            list<NodeBB*> listEnd = bb->mainStop();
             timer.stop();
-            waitThread.detach();
 
             if (!listEnd.empty())
             {
                 time += timer.getTimeMs();
                 counter++;
+                cout << counter;
                 cout << "X\n";
             } else
                 cout << " -\n";

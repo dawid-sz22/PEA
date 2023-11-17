@@ -6,7 +6,7 @@
 using namespace std;
 BranchAndBound::BranchAndBound(AdjacencyMatrix *matrix) : matrix(matrix)
 {}
-list<NodeBB *> BranchAndBound::main(std::atomic<bool> &stopFlag) {
+list<NodeBB *> BranchAndBound::mainStop() {
     //stworzenie pomocniczego wierzchołka, który będzie imitował ojca korzenia
     NodeBB* root = new NodeBB(matrix->getStartNode(),0, matrix->getNodesCount(), nullptr);
 
@@ -23,6 +23,8 @@ list<NodeBB *> BranchAndBound::main(std::atomic<bool> &stopFlag) {
     ///Zaczynamy od obliczenia macierzy korzenia i jego LB (lowerBound)
     countMatrix(root, nullptr);
 
+    findUpperBound();
+
     queue.push(root);
 
     NodeBB* newNode;
@@ -33,19 +35,9 @@ list<NodeBB *> BranchAndBound::main(std::atomic<bool> &stopFlag) {
         queue.pop();    //usuwamy wierzchołek z kolejki
         listToDelete.push_back(nodeFromQueue);
         for (int i = 0; i < matrix->getNodesCount(); ++i) {
-            if (stopFlag.load())
+            if (queue.size() > 3318784)
             {
-                while (!queue.empty())
-                {
-                    //usuwanie wierzchołków z pamięci, z kolejki
-                    nodeFromQueue = queue.top();
-                    queue.pop();
-                    delete nodeFromQueue;
-                }
-
-                for (NodeBB* node: listToDelete) {
-                    delete node;
-                }
+                cout <<"ROZMIAR: " << queue.size() << endl;
                 return {};
             }
 
@@ -54,7 +46,33 @@ list<NodeBB *> BranchAndBound::main(std::atomic<bool> &stopFlag) {
                 newNode = new NodeBB(i, nodeFromQueue->level + 1, matrix->getNodesCount(), nodeFromQueue);
                 blockMatrix(newNode, nodeFromQueue);
                 countMatrix(newNode, nodeFromQueue);
-                queue.push(newNode);    //dodajemy do kolejki nowy wierzchołek
+                if (newNode->lowerBound > upperBound) {
+                    delete newNode;
+                    continue;
+                } else {
+                    //jeśli doszliśmy podczas sprawdzania potomków do liścia i jego LB jest mniej niż UP, zaaktualizuj UP
+                    //oraz usuń wierzchołki, które mają LB > nowego UP
+                    if((newNode->level == matrix->getNodesCount()-1) && newNode->lowerBound < upperBound)
+                    {
+                        upperBound = newNode->lowerBound;
+                        NodeBB* nodeCheck;
+                        std::priority_queue<NodeBB*, std::vector<NodeBB*>,compareLowerBound> newQueue;
+                        while(!queue.empty())
+                        {
+                            nodeCheck = queue.top();
+                            queue.pop();
+                            if (nodeCheck->lowerBound > upperBound)
+                            {
+                                delete nodeCheck;
+                            } else
+                            {
+                                newQueue.push(nodeCheck);
+                            }
+                        }
+                        queue = newQueue;
+                    }
+                    queue.push(newNode);    //dodajemy do kolejki nowy wierzchołek
+                }
             }
         }
     }
@@ -66,7 +84,6 @@ list<NodeBB *> BranchAndBound::main(std::atomic<bool> &stopFlag) {
 
 
 
-    stopFlag.store(true);
     return listToDelete;
 }
 
@@ -88,6 +105,8 @@ list<NodeBB*> BranchAndBound::main() {
     ///Zaczynamy od obliczenia macierzy korzenia i jego LB (lowerBound)
     countMatrix(root, nullptr);
 
+    findUpperBound();
+
     queue.push(root);
 
     NodeBB* newNode;
@@ -98,19 +117,45 @@ list<NodeBB*> BranchAndBound::main() {
         queue.pop();    //usuwamy wierzchołek z kolejki
         listToDelete.push_back(nodeFromQueue);
         for (int i = 0; i < matrix->getNodesCount(); ++i) {
+
             //szukamy wolnych dróg z wylosowanego wierzchołka
             if (nodeFromQueue->table[nodeFromQueue->numberOfNode][i] != INT32_MAX) {
                 newNode = new NodeBB(i, nodeFromQueue->level + 1, matrix->getNodesCount(), nodeFromQueue);
                 blockMatrix(newNode, nodeFromQueue);
                 countMatrix(newNode, nodeFromQueue);
-                queue.push(newNode);    //dodajemy do kolejki nowy wierzchołek
+                if (newNode->lowerBound > upperBound) {
+                    delete newNode;
+                    continue;
+                } else {
+                    //jeśli doszliśmy podczas sprawdzania potomków do liścia i jego LB jest mniej niż UP, zaaktualizuj UP
+                    //oraz usuń wierzchołki, które mają LB > nowego UP
+                    if((newNode->level == matrix->getNodesCount()-1) && newNode->lowerBound < upperBound)
+                    {
+                        upperBound = newNode->lowerBound;
+                        NodeBB* nodeCheck;
+                        std::priority_queue<NodeBB*, std::vector<NodeBB*>,compareLowerBound> newQueue;
+                        while(!queue.empty())
+                        {
+                            nodeCheck = queue.top();
+                            queue.pop();
+                            if (nodeCheck->lowerBound > upperBound)
+                            {
+                                delete nodeCheck;
+                            } else
+                            {
+                                newQueue.push(nodeCheck);
+                            }
+                        }
+                        queue = newQueue;
+                    }
+                    queue.push(newNode);    //dodajemy do kolejki nowy wierzchołek
+                }
             }
         }
     }
     ///Znaleziono liść, który jest jednocześnie lowerBound
     NodeBB* nodeEnd = queue.top();
     queue.pop();
-
     listToDelete.push_back(nodeEnd);
 
     return listToDelete;
@@ -192,6 +237,65 @@ void BranchAndBound::clear() {
     for (NodeBB* node: listToDelete) {
         delete node;
     }
+}
+
+void BranchAndBound::findUpperBound() {
+    std::priority_queue<NodeBB*, std::vector<NodeBB*>,compareLowerBound> queueHelp;
+    //kopia
+    NodeBB* rootNode = new NodeBB(matrix->getStartNode(),0, matrix->getNodesCount(), nullptr);
+
+    //inicjalizacja macierzy korzenia
+    for (int i = 0; i < matrix->getNodesCount(); ++i) {
+        for (int j = 0; j < matrix->getNodesCount(); ++j) {
+            if (i==j)
+                rootNode->table[i][j] = INT32_MAX;              //na przekątnych nieskończoności zamiast -1
+            else
+                rootNode->table[i][j] = matrix->getWsk()[i][j];
+        }
+    }
+
+    ///Zaczynamy od obliczenia macierzy korzenia i jego LB (lowerBound)
+    countMatrix(rootNode, nullptr);
+
+    queueHelp.push(rootNode);
+
+
+    NodeBB* helpNode;
+    NodeBB* newNode;
+    NodeBB* nodeFromQueue;
+
+    while (queueHelp.top()->level != matrix->getNodesCount()-1) {
+        nodeFromQueue = queueHelp.top();
+        queueHelp.pop();    //usuwamy wierzchołek z kolejki
+        while (!queueHelp.empty())
+        {
+            //usuwanie wierzchołków z pamięci, z kolejki
+            helpNode = queueHelp.top();
+            queueHelp.pop();
+            delete helpNode;
+        }
+
+        for (int i = 0; i < matrix->getNodesCount(); ++i) {
+
+            //szukamy wolnych dróg z wylosowanego wierzchołka
+            if (nodeFromQueue->table[nodeFromQueue->numberOfNode][i] != INT32_MAX) {
+                newNode = new NodeBB(i, nodeFromQueue->level + 1, matrix->getNodesCount(), nodeFromQueue);
+                blockMatrix(newNode, nodeFromQueue);
+                countMatrix(newNode, nodeFromQueue);
+                queueHelp.push(newNode);
+            }
+        }
+        delete nodeFromQueue;
+    }
+    upperBound = queueHelp.top()->lowerBound;
+    while (!queueHelp.empty())
+    {
+        //usuwanie wierzchołków z pamięci, z kolejki
+        helpNode = queueHelp.top();
+        queueHelp.pop();
+        delete helpNode;
+    }
+
 }
 
 
