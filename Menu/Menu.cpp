@@ -5,6 +5,7 @@
 #include "../Algorithms/BranchAndBound.h"
 #include "../Algorithms/BruteForce.h"
 #include "../Algorithms/DynamicPrograming.h"
+#include "../Metaheuristics/TabuSearch.h"
 #include <iostream>
 #include <fstream>
 #include <thread>
@@ -16,8 +17,9 @@ void Menu::showMenu()
     int choose;
     do {
         cout << "Asymetryczny problem komiwojazera (ATSP)\n";
-        cout << "1. Testy manualne\n";
-        cout << "2. Testy automatyczne\n";
+        cout << "1. Testy manualne (Algorytmy dokładne)\n";
+        cout << "2. Testy manualne (Metaheurystyki)\n";
+        cout << "3. Testy automatyczne\n";
         cout << "0. Zakoncz program\n";
         cout << "Wybierz opcje: ";
 
@@ -29,6 +31,9 @@ void Menu::showMenu()
                 Menu::showMenuManual();
                 break;
             case 2:
+                Menu::showMenuManualM();
+                break;
+            case 3:
                 Menu::showMenuAutomatic();
                 break;
             case 0:
@@ -306,6 +311,86 @@ void Menu::showMenuManual() {
                     dp->printResults();
                     delete dp;
                 }
+            }
+                break;
+            case 0:
+                system("cls");
+                break;
+            default:
+                cout << endl << "Podano niepoprawna opcje!" << endl;
+                break;
+        }
+        cout << endl << endl;
+    } while (chooseOption);
+
+    //usuń tablice po zakonczeniu
+    delete matrix;
+}
+void Menu::showMenuManualM() {
+    AdjacencyMatrix* matrix = nullptr;
+    Timer timer;
+    int chooseOption = 0;
+    double stop = 0.0;
+    int* path = nullptr;
+    int help = 0;
+
+    do
+    {
+        cout << "1. Wczytaj graf z pliku\n";
+        cout << "2. Wprowadz kryterium stopu (czas w ms)\n";
+        cout << "3. Wybór sasiedztwa ? \n";
+        cout << "4. Tabu Search\n";
+        cout << "7. Zapisz sciezke do .txt\n";
+        cout << "8. Wczytaj sciezke z .txt i podaj koszt\n";
+        cout << "0. Wroc\n";
+        cout << "Wybierz opcje: ";
+        cin >> chooseOption; //wybrana opcje
+
+        switch (chooseOption)
+        {
+            case 1:
+                cout << "Pobieranie grafu z pliku tekstowego. Podaj nazwe pliku: ";
+                {
+                    string filename;
+                    cin >> filename;
+                    AdjacencyMatrix* newMatrix;
+                    newMatrix = FileClass::matrixFromFile(filename);
+                    if (newMatrix != nullptr)   // jeśli nie wystąpił błąd, usuń macierz i zastąp ją nową
+                    {
+                        delete matrix;
+                        matrix = newMatrix;
+                    }
+                    else
+                        cout<< "ERROR IN READ"<<endl;
+                }
+                break;
+            case 2: //Kryterium stopu
+            {
+                cout << "\nPodaj czas: ";
+                cin >> stop;
+            }
+                break;
+            case 3: //sąsiedztwo
+            {
+
+            }
+                break;
+            case 4: //Tabu search
+            {
+                if (matrix == nullptr) {
+                    cout << "NIE WCZYTANO GRAFU!\n";
+                } else {
+                    TabuSearch* ts = new TabuSearch(matrix,stop);
+
+                    delete[] path;
+                    path = ts->start();
+                    ts->printResults();
+                    delete ts;
+                }
+            }
+                break;
+            case 7:
+            {
             }
                 break;
             case 0:

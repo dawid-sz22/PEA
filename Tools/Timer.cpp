@@ -20,6 +20,12 @@ void Timer::stop() {
     elapsed = read_QPC() - start;
 }
 
+double Timer::read() {
+    elapsed = read_QPC() - start;
+    return (1000.0 * elapsed) /frequency;
+
+}
+
 void Timer::printResult() {
     cout << endl;
 

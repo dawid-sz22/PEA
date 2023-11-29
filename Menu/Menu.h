@@ -9,6 +9,7 @@
 class Menu {
 public:
     static void showMenuManual();
+    static void showMenuManualM();
     static void showMenu();
     static void showMenuAutomatic();
     static void autoBF(int* data, int dataCount);
