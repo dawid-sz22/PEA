@@ -15,6 +15,8 @@ public:
     static void autoBF(int* data, int dataCount);
     static void autoBB(int* data, int dataCount);
     static void autoDP(int* data, int dataCount);
+    static void autoTS(std::string data[],int timeData[], int iterationsNoChange, int dataCount, int typeNeighborhood);
+
 };
 
 

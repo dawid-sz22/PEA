@@ -24,7 +24,7 @@ bool FileClass::file_read_line(ifstream &file, int tab[], int size) //wczytywani
     return(true);
 }
 
-AdjacencyMatrix* FileClass::matrixFromFileH(string filename)
+AdjacencyMatrix* FileClass::matrixFromFileH(const string& filename)
 {
     ifstream file;
     int* tab = new int[1];
@@ -60,7 +60,7 @@ AdjacencyMatrix* FileClass::matrixFromFileH(string filename)
 
     return matrix;
 }
-bool FileClass::searchInFile(ifstream& inputFile, string toFind) {
+bool FileClass::searchInFile(ifstream& inputFile, const string& toFind) {
     string tmp;
     string toFind2;
     if (toFind.substr(toFind.size() - 1, 1) == ":") {
@@ -74,7 +74,7 @@ bool FileClass::searchInFile(ifstream& inputFile, string toFind) {
     if (check == 0) return false;
     return true;
 }
-AdjacencyMatrix *FileClass::matrixFromFile(string fileName) {
+AdjacencyMatrix *FileClass::matrixFromFile(const string& fileName) {
     string s;
     ifstream file(fileName);
     if (!file)
@@ -153,4 +153,61 @@ AdjacencyMatrix *FileClass::matrixFromFile(string fileName) {
     return nullptr;
 }
 
+bool FileClass::saveToFile(const string& fileName, std::vector<int> &path, int nodesCount) {
+    fstream file;
+    file.open(fileName,ios::out);
+    if (file.is_open())
+    {
+        file << nodesCount << endl;
+        for (int i = 0; i < nodesCount; ++i) {
+            file << path[i] << endl;
+        }
+        return true;
+    }
+    return false;
+}
+
+vector<int> FileClass::readPathFile(const string& fileName) {
+    ifstream file;
+    int* tab = new int[1];
+    vector<int> path;
+    int size=0;
+    file.open(fileName.c_str());
+
+    if(file.is_open())
+    {
+        if(file_read_line(file, tab, 1))
+        {
+            size = tab[0];
+            path.resize(size);
+            for(int i = 0; i < size; i++)
+            {
+                if(file_read_line(file, tab, 1))
+                {
+                    path[i] = tab[0];
+                }
+                else
+                {
+                    delete[] tab;
+                    cout << "File error - READ NODE" << endl;
+                    path.clear();
+                    return path;
+                }
+            }
+        }
+        else
+        {
+            cout << "File error - READ INFO" << endl;
+            path.clear();
+        }
+        file.close();
+    }
+    else
+    {
+        cout << "File error - OPEN" << endl;
+        path.clear();
+    }
+
+    return path;
+}
 

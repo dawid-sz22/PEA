@@ -17,7 +17,7 @@ void Menu::showMenu()
     int choose;
     do {
         cout << "Asymetryczny problem komiwojazera (ATSP)\n";
-        cout << "1. Testy manualne (Algorytmy dokładne)\n";
+        cout << "1. Testy manualne (Algorytmy dokladne)\n";
         cout << "2. Testy manualne (Metaheurystyki)\n";
         cout << "3. Testy automatyczne\n";
         cout << "0. Zakoncz program\n";
@@ -55,6 +55,7 @@ void Menu::showMenuAutomatic() {
         cout << "2. Branch&Bound\n";
         cout << "3. DynamicPrograming\n";
         cout << "4. All\n";
+        cout << "5. Tabu Search\n";
         cout << "0. Wroc\n";
         cout << "Wybierz opcje: ";
         cin >> chooseOption; //wybrana opcje
@@ -139,6 +140,22 @@ void Menu::showMenuAutomatic() {
                 autoDP(dataDP,dataCountDP);
                 autoBB(dataBB,dataCountBB);
             }
+            case 5:
+            {
+                int typeNeighborhood = 1;
+                string fileNames[] = {"../Files/ftv55.atsp","../Files/ftv170.atsp","../Files/rbg358.atsp"};
+                int timeData[] = {120,240,360};
+                cout << "\nPodaj typ sąsiedztwa (1-SWAP,2-INSERT,3-INVERT,0-ALL): ";
+                cin >> typeNeighborhood;
+                if (typeNeighborhood<0 || typeNeighborhood>3)
+                {
+                    typeNeighborhood = 1;
+                    cout << endl << "Podano niepoprawna opcje!" << endl;
+                    break;
+                }
+                autoTS(fileNames,timeData,100,1,typeNeighborhood);
+            }
+                break;
             case 0:
                 system("cls");
                 break;
@@ -330,18 +347,23 @@ void Menu::showMenuManualM() {
     AdjacencyMatrix* matrix = nullptr;
     Timer timer;
     int chooseOption = 0;
-    double stop = 0.0;
-    int* path = nullptr;
+    double stop = 5.0;
+    int iterationsWithNoChange = 100;
+    int term = 5;
+    int typeNeigh = 1;
+    string typeN = "SWAP";
+
+    vector<int> path;
     int help = 0;
+    string filename;
 
     do
     {
         cout << "1. Wczytaj graf z pliku\n";
-        cout << "2. Wprowadz kryterium stopu (czas w ms)\n";
-        cout << "3. Wybór sasiedztwa ? \n";
+        cout << "2. Wprowadz kryteria (TS: "<< stop <<"s Stop, MAXIterationsNoChange = "<<iterationsWithNoChange<<", Term = "<<term <<")\n";
+        cout << "3. Wybor sasiedztwa ("<<typeN<<")\n";
         cout << "4. Tabu Search\n";
-        cout << "7. Zapisz sciezke do .txt\n";
-        cout << "8. Wczytaj sciezke z .txt i podaj koszt\n";
+        cout << "6. Wczytaj sciezke z .txt i podaj koszt\n";
         cout << "0. Wroc\n";
         cout << "Wybierz opcje: ";
         cin >> chooseOption; //wybrana opcje
@@ -351,7 +373,6 @@ void Menu::showMenuManualM() {
             case 1:
                 cout << "Pobieranie grafu z pliku tekstowego. Podaj nazwe pliku: ";
                 {
-                    string filename;
                     cin >> filename;
                     AdjacencyMatrix* newMatrix;
                     newMatrix = FileClass::matrixFromFile(filename);
@@ -366,12 +387,43 @@ void Menu::showMenuManualM() {
                 break;
             case 2: //Kryterium stopu
             {
-                cout << "\nPodaj czas: ";
-                cin >> stop;
+                cout << "1. Dla Tabu Search\n";
+                cout << "2. Dla Symulowanego wyzarzania\n";
+                cout << "Wybierz opcje: ";
+                cin >> chooseOption; //wybrana opcje
+                switch (chooseOption) {
+                    case 1:
+                        cout << "\nPodaj czas w sekundach: ";
+                        cin >> stop;
+                        cout << "\nPodaj maksymalna ilosc iteracji bez zmian: ";
+                        cin >> iterationsWithNoChange;
+                        cout << "\nPodaj wielkosc kadencji: ";
+                        cin >> term;
+                        break;
+                    case 2:
+                        //SW
+                        break;
+                    default:
+                        cout << endl << "Podano niepoprawna opcje!" << endl;
+                        break;
+                }
             }
                 break;
             case 3: //sąsiedztwo
             {
+                cout << "\nPodaj typ sasiedztwa (1-SWAP,2-INSERT,3-INVERT): ";
+                cin >> typeNeigh;
+                if (typeNeigh<1 || typeNeigh>3)
+                {
+                    typeN = "SWAP";
+                    typeNeigh = 1;
+                    cout << endl << "Podano niepoprawna opcje!" << endl;
+                } else if (typeNeigh == 1)
+                    typeN = "SWAP";
+                else if (typeNeigh == 2)
+                    typeN = "INSERT";
+                else
+                    typeN = "INVERT";
 
             }
                 break;
@@ -380,18 +432,49 @@ void Menu::showMenuManualM() {
                 if (matrix == nullptr) {
                     cout << "NIE WCZYTANO GRAFU!\n";
                 } else {
-                    TabuSearch* ts = new TabuSearch(matrix,stop);
+                    TabuSearch* ts = new TabuSearch(matrix,stop,iterationsWithNoChange, term, typeNeigh);
 
-                    delete[] path;
-                    path = ts->start();
+                    ts->start();
+                    path = ts->getShortestPath();
                     ts->printResults();
+                    string s = "../Files/Output/ts_";
+                    size_t pos = filename.find_last_of('/');
+                    size_t pos2 = filename.find_last_of('.');
+                    s += filename.substr(pos+1,pos2);
+                    s += "_";
+                    s += std::to_string(ts->getPathValue());
+                    s += ".txt";
+                    if (FileClass::saveToFile(s,path,matrix->getNodesCount()+1))
+                        cout << "ZAPISANO DO PLIKU\n";
+                    else
+                        cout << "ERROR IN SAVE\n";
                     delete ts;
                 }
             }
                 break;
-            case 7:
-            {
-            }
+            case 6:
+                if (matrix != nullptr) {
+                    cout << "Pobieranie sciezki z pliku tekstowego. Podaj nazwe pliku: ";
+                    {
+                        string filename2;
+                        cin >> filename2;
+                        vector<int> path2(FileClass::readPathFile(filename2));
+                        if (!path2.empty())   // jeśli nie wystąpił błąd, usuń macierz i zastąp ją nową
+                        {
+                            path = path2;
+
+                            int helpCount = 0;
+                            for (int i = 0; i < matrix->getNodesCount(); i++) {
+                                //zliczanie całej wartości ścieżki. Jeśli dojdziemy do ostatniego wierzchołka w ścieżce, policz powrót
+                                helpCount += matrix->getWsk()[path[i]][path[i + 1]];
+                            }
+                            cout << "KOSZT: " << helpCount;
+                            cout << endl;
+                        } else
+                            cout << "ERROR IN READ" << endl;
+                    }
+                } else
+                    cout <<"BRAK MACIERZY\n";
                 break;
             case 0:
                 system("cls");
@@ -500,6 +583,67 @@ void Menu::autoDP(int *data, int dataCount) {
         }
         file << time/100 << '\n';
         time = 0.0;
+    }
+    file.close();
+}
+
+void Menu::autoTS(string data[],int timeData[], int iterationsNoChange, int dataCount, int typeNeigh)
+{
+    fstream file;
+    TabuSearch* ts;
+    AdjacencyMatrix* matrix;
+    vector<int> bestPath;
+    int bestPathValue = INT32_MAX;
+    int timeBest= 0;
+    int l = 0;
+
+    if (typeNeigh == 0)
+    {
+        l = 1;
+        typeNeigh = 3;
+    }
+    else
+        l = typeNeigh;
+
+    file.open("../Files/Output/test_TS.txt",ios::out | ios::app);
+    //nazwa pliku;najlepsze rozwizanie;czas;sąsiedztwo
+    for (; l <= typeNeigh; ++l) {
+        for (int i = 0; i < dataCount; ++i) {
+            file << data[i] << ';';
+            matrix = FileClass::matrixFromFile(data[i]);
+            bestPath.clear();
+            bestPath.resize(matrix->getNodesCount() + 1);
+            for (int k = 0; k < 10; ++k) {
+                cout << "TEST (TS): " << data[i] << ", " << k << " proba: ";
+                ts = new TabuSearch(matrix, timeData[i], iterationsNoChange, 4, l);
+                ts->start();
+                if (ts->getPathValue() < bestPathValue) {
+                    bestPathValue = ts->getPathValue();
+                    timeBest = ts->getTime();
+
+                    for (int j = 0; j < matrix->getNodesCount() + 1; ++j) {
+                        bestPath[j] = ts->getShortestPath()[j];
+                    }
+                }
+                cout << "X\n";
+                delete ts;
+            }
+            string s = "../Files/Output/ts_";
+            size_t pos = data[i].find_last_of('/');
+            size_t pos2 = data[i].find_last_of('.');
+            s += data[i].substr(pos + 1, pos2);
+            s += "_";
+            s += std::to_string(ts->getPathValue());
+            s += ".txt";
+            if (FileClass::saveToFile(s, bestPath, matrix->getNodesCount() + 1))
+                cout << "ZAPISANO DO PLIKU\n";
+            else
+                cout << "ERROR IN SAVE\n";
+
+            file << bestPathValue << ";" << timeBest << ";" << typeNeigh << '\n';
+
+            bestPathValue = INT32_MAX;
+        }
     }
     file.close();
 }

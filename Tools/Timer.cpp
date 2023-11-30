@@ -20,7 +20,12 @@ void Timer::stop() {
     elapsed = read_QPC() - start;
 }
 
-double Timer::read() {
+double Timer::readS() {
+    elapsed = read_QPC() - start;
+    return elapsed /frequency;
+
+}
+double Timer::readMs() {
     elapsed = read_QPC() - start;
     return (1000.0 * elapsed) /frequency;
 

@@ -9,7 +9,8 @@ public:
 
     void run();
     void stop();
-    double read();
+    double readS();
+    double readMs();
     void printResult();
     double getTimeMs();
 };
