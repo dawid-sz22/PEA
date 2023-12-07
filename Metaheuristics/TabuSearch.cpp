@@ -4,8 +4,8 @@
 #include "../Tools/Timer.h"
 #include "../Tools/Generator.h"
 
-TabuSearch::TabuSearch(AdjacencyMatrix* matrix, double timeStop, int iterationsWithNoChangeMAX, int term, int neighborhoodType) : matrix(matrix), timeStop(timeStop), iterationsWithNoChangeMAX(iterationsWithNoChangeMAX)
-, timeWhenBest (0.0), term (term), neighborhoodType(neighborhoodType), shortestPath(matrix->getNodesCount() + 1, 0)
+TabuSearch::TabuSearch(AdjacencyMatrix* matrix, int bestKnownResult, double timeStop, int iterationsWithNoChangeMAX, double k, int neighborhoodType, int aspiration) : matrix(matrix), timeStop(timeStop), iterationsWithNoChangeMAX(iterationsWithNoChangeMAX)
+,bestKnownResult(bestKnownResult),timeWhenBest (0.0), term ((int)(k * std::sqrt(matrix->getNodesCount()))), neighborhoodType(neighborhoodType), shortestPath(matrix->getNodesCount() + 1, 0), aspirationPlus(aspiration)
 {}
 
 
@@ -39,6 +39,7 @@ void TabuSearch::greedyRoute() {
 
     //obliczanie wartości najkrótszej ścieżki
     shortestPathValue = countPath(shortestPath);
+    greedyPathValue = shortestPathValue;
 
     delete[] alreadyVisited;
 
@@ -112,20 +113,15 @@ int TabuSearch::countPath(int tempValue, int elementI, int elementJ, std::vector
             break;
     }
 
-
     return tempValue - minus + plus;
 }
 
 void TabuSearch::start() {
     Timer timer;
     Generator generator;
-    timer.run();
     timeWhenBest = 0.0;
 
     greedyRoute();
-
-//    cout <<"GREEDY:\n";
-//    printResults();
 
     //Stworzenie listy Tabu
     int **tabuList = new int *[matrix->getNodesCount()];
@@ -147,6 +143,9 @@ void TabuSearch::start() {
     int bestI, bestJ, bestNeighborhoodValue;
     int diff;
     bool hasBeenFoundBest = false;
+
+    timer.run();
+
     //wykonuje dopóki nie upłynie ustalony czas
     while (timer.readS() < timeStop) {
         if (iterationsWithNoChange > iterationsWithNoChangeMAX)
@@ -172,7 +171,7 @@ void TabuSearch::start() {
 
                 //wybieranie najlepszego ruchu, który jednocześnie nie jest zabroniony w liście tabu, chyba że (KRYTERIUM ASPIRACJI) ruch, który blokuje
                 //lista tabu, polepszy nam aktualne znane rozwiązanie
-                if (((diff < bestNeighborhoodValue) && tabuList[i][j] == 0) || (currentSolutionValue + diff) < shortestPathValue) {
+                if (((diff < bestNeighborhoodValue) && tabuList[i][j] == 0) || (currentSolutionValue + diff) < (shortestPathValue - aspirationPlus)) {
                     bestNeighborhoodValue = diff;
                     bestI = i;
                     bestJ = j;
@@ -207,7 +206,6 @@ void TabuSearch::start() {
                     break;
             }
 
-            //wybieramy losowo kadencje
             tabuList[bestI][bestJ] = term;
             tabuList[bestJ][bestI] = term;
             currentSolutionValue += bestNeighborhoodValue;
@@ -215,19 +213,11 @@ void TabuSearch::start() {
             //jeśli znaleziono nowe najlepsze globalne rozwiązanie --> zaaktualizuj
             if (currentSolutionValue < shortestPathValue) {
                 timeWhenBest = timer.readMs();
-                switch (neighborhoodType) {
-                    case 1:
-                        std::swap(shortestPath[bestI], shortestPath[bestJ]);
-                        break;
-                    case 2:
-                        insert(shortestPath,bestJ,bestI);
-                        break;
-                    case 3:
-                        std::reverse(shortestPath.begin() + bestI, shortestPath.begin() + bestJ + 1);
-                        break;
-                }
                 shortestPathValue = currentSolutionValue;
+                shortestPath = currentRoute;
                 iterationsWithNoChange = 0;
+
+                shortestPathChanging.push_back({static_cast<double>(shortestPathValue),(timer.readMs())});
             } else
             {
                 iterationsWithNoChange++;
@@ -249,7 +239,10 @@ void TabuSearch::printResults() {
         cout << shortestPath[i] << " -> ";
     }
     cout << shortestPath[matrix->getNodesCount()];
-    cout << "\nKOSZT: " <<shortestPathValue;
+    cout << "\nKOSZT (METODA ZACHLANNA): " <<greedyPathValue;
+    cout << "\nKOSZT (NAJLEPSZA ZNALEZIONA): " <<shortestPathValue;
+    if (bestKnownResult != -1)
+        cout << "\nBLAD WZGLEDNY: " <<(abs(shortestPathValue-bestKnownResult)/(double)bestKnownResult)*100<<"%  (BEST: "<<bestKnownResult<<")";
     cout << "\nCZAS W JAKIM ZNALEZIONO ROZWIAZANIE: " <<timeWhenBest <<"ms";
     cout << endl;
 }
@@ -258,25 +251,39 @@ void TabuSearch::randomRoute(vector<int> &source) {
     Generator gen;
     vector<int> helpVector;
     int randomPosition;
-    for (int i = 0; i < matrix->getNodesCount(); ++i) {
-        if (matrix->getStartNode() == i)
-            continue;
 
-        helpVector.push_back(i);
+    //jeśli 0 -->> losuj losowo pierwszą część ścieżki
+    if (gen.getNumber(0,1))
+    {
+        for (int i = 0; i < matrix->getNodesCount()/2; ++i) {
+            if (matrix->getStartNode() == i)
+                continue;
+
+            helpVector.push_back(source[i]);
+        }
+
+        for (int i = 1; i < matrix->getNodesCount()/2; ++i) {
+            randomPosition = gen.getNumber(0,(int)helpVector.size() - 1);
+            source[i] = helpVector.at(randomPosition);
+            helpVector.erase(helpVector.begin() + randomPosition);
+        }
     }
+    else //jeśli 1 to losuj drugą część ścieżki
+    {
+        for (int i = matrix->getNodesCount()/2; i < matrix->getNodesCount(); ++i) {
+            helpVector.push_back(source[i]);
+        }
 
-    source[0] = matrix->getStartNode();
-    for (int i = 1; i < matrix->getNodesCount(); ++i) {
-        randomPosition = gen.getNumber(0,(int)helpVector.size() - 1);
-        source[i] = helpVector.at(randomPosition);
-        helpVector.erase(helpVector.begin() + randomPosition);
+        for (int i = matrix->getNodesCount()/2; i < matrix->getNodesCount(); ++i) {
+            randomPosition = gen.getNumber(0,(int)helpVector.size() - 1);
+            source[i] = helpVector.at(randomPosition);
+            helpVector.erase(helpVector.begin() + randomPosition);
+        }
     }
-    source[matrix->getNodesCount()] = matrix->getStartNode();
-
 
 }
 
-int TabuSearch::getPathValue() const {
+int TabuSearch::getPathValue() {
     return shortestPathValue;
 }
 
@@ -293,6 +300,10 @@ void TabuSearch::insert(std::vector<int> &v, int oldIndex, int newIndex) {
         rotate(v.rend() - oldIndex - 1, v.rend() - oldIndex, v.rend() - newIndex);
     else
         rotate(v.begin() + oldIndex, v.begin() + oldIndex + 1, v.begin() + newIndex + 1);
+}
+
+std::vector<std::vector<double>> TabuSearch::getPathChanging() {
+    return shortestPathChanging;
 }
 
 
