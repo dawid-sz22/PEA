@@ -14,6 +14,8 @@ public:
     int getNumber();
     int getNumber(int min, int max);
     double randomZeroToOne();
+    double randomDouble(double min, double max);
+
 };
 
 

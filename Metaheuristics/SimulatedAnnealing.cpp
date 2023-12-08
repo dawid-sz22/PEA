@@ -6,10 +6,9 @@
 #include "../Tools/Generator.h"
 
 SimulatedAnnealing::SimulatedAnnealing(AdjacencyMatrix* matrix, int bestKnownResult, double timeStop,
-                                       int neighborhoodType, int iterationMAXNochange, double a, int L):
+                                       int neighborhoodType, double a):
 matrix(matrix), timeStop(timeStop),bestKnownResult(bestKnownResult),timeWhenBest (0.0),neighborhoodType(neighborhoodType),
-shortestPath(matrix->getNodesCount() + 1, 0), a(a), L(7*matrix->getNodesCount()),
-temperature(500.0), iterationsWithNoChangeMAX(iterationMAXNochange), iterationsWithNoChange(0)
+shortestPath(matrix->getNodesCount() + 1, 0), a(a)
 {}
 
 
@@ -127,22 +126,11 @@ void SimulatedAnnealing::start() {
     greedyRoute();
 
     iterationsWithChange = 0;
-    double avg = 0;
-    double count = 0;
-    for (int i = 0; i < matrix->getNodesCount(); ++i) {
-        for (int j = 0; j < matrix->getNodesCount(); ++j) {
-            if (i!=j)
-            {
-                avg += matrix->getWsk()[i][j];
-                count++;
-            }
-        }
-    }
-    avg = avg/count;
-    temperature = avg;
-    L = matrix->getNodesCount() * matrix->getNodesCount();
-    temperatureStart = temperature;
-    cout << temperatureStart << ";";
+    ///TEMP START
+    temperatureStart = shortestPathValue * 10;
+    temperature = temperatureStart;
+    ///ERA SIZE
+    L = matrix->getNodesCount()*matrix->getNodesCount()/2;
 
     //Przepisanie najlepszej aktualnej ścieżki do tymczasowej ścieżki
     vector<int> currentRoute(matrix->getNodesCount() + 1,0);
@@ -153,46 +141,46 @@ void SimulatedAnnealing::start() {
     //rozwiązanie aktualne, dla którego obliczane jest sąsiedztwo
     int currentSolutionValue = shortestPathValue;
     int diff;
-    int iTemp, jTemp, help;
-
+    int bestI, bestJ;
+    int bestNeighborhoodValue = INT_MAX;
     timer.run();
 
     //wykonuje dopóki nie upłynie ustalony czas
-    while (iterationsWithChange == 0) {
+    while (timer.readS() < timeStop) {
         for (int k = 0; k < L; k++) {
-            iTemp = generator.getNumber(1,matrix->getNodesCount()-1);
-            jTemp = generator.getNumber(1,matrix->getNodesCount()-1);
-            while (iTemp == jTemp)
-            {
-                jTemp = generator.getNumber(1,matrix->getNodesCount()-1);
-            }
-            if (iTemp > jTemp)
-            {
-                help = iTemp;
-                iTemp = jTemp;
-                jTemp = help;
-            }
+            bestNeighborhoodValue = INT_MAX;
+            iterationsWithChange = 0;
 
-            //różnica pomiędzy wyliczonym rozwiązniem a aktualnym
-            diff = countPath(currentSolutionValue,iTemp,jTemp,currentRoute) - currentSolutionValue;
+            for (int i = 1; i < matrix->getNodesCount(); i++) {
+                for (int j = i + 1; j < matrix->getNodesCount(); j++) {
+                    //różnica pomiędzy wyliczonym rozwiązniem a aktualnym
+                    diff = countPath(currentSolutionValue,i,j,currentRoute) - currentSolutionValue;
+
+                    if (diff < bestNeighborhoodValue) {
+                        bestNeighborhoodValue = diff;
+                        bestI = i;
+                        bestJ = j;
+                    }
+                }
+            }
 
             //zamień bieżącą ścieżke, jesli znaleziono lepsze rozwiązanie od bieżącego
             //LUB w zależności od prawdopodobieństwa, zamień na gorsze rozwiązanie
-            if ((diff < 0) || isToChange(diff,temperature)) {
+            if ((bestNeighborhoodValue < 0) || isToChange(bestNeighborhoodValue,temperature)) {
                 //dokonaj zmiany ścieżki
                 switch (neighborhoodType) {
                     case 1:
-                        std::swap(currentRoute[iTemp], currentRoute[jTemp]);
+                        std::swap(currentRoute[bestI], currentRoute[bestJ]);
                         break;
                     case 2:
-                        insert(currentRoute,jTemp,iTemp);
+                        insert(currentRoute,bestJ,bestI);
                         break;
                     case 3:
-                        std::reverse(currentRoute.begin() + iTemp, currentRoute.begin() + jTemp + 1);
+                        std::reverse(currentRoute.begin() + bestI, currentRoute.begin() + bestJ + 1);
                         break;
                 }
                 //zaktualizuj koszt
-                currentSolutionValue += diff;
+                currentSolutionValue += bestNeighborhoodValue;
 
                 //sprawdź, czy nie jest lepsze od aktualnego optimum -->> jeśli tak to zapisz najlepsze dotychczasowe rozwiązanie
                 if (currentSolutionValue < shortestPathValue) {
@@ -206,17 +194,12 @@ void SimulatedAnnealing::start() {
         }
         ///SCHŁADZANIE
         temperature *= a;
-        if (temperature < 0.00000001 && iterationsWithChange <3)
+        if (iterationsWithChange == 0)
         {
-            currentRoute = shortestPath;
             randomRoute(currentRoute);
             currentSolutionValue = countPath(currentRoute);
-            temperature = generator.getNumber(50,500);
-            temperatureStart = temperature;
-//            cout << "Here"<< endl;
         }
-        else if (iterationsWithChange > 0)
-            cout << temperatureStart << ";";
+
     }
 }
 
@@ -245,48 +228,33 @@ void SimulatedAnnealing::randomRoute(vector<int> &source) {
     vector<int> helpVector;
     int randomPosition;
 
+    if (gen.getNumber(0,1))
+    {
+        for (int i = 0; i < matrix->getNodesCount()/2; ++i) {
+            if (matrix->getStartNode() == i)
+                continue;
 
-    for (int i = 0; i < matrix->getNodesCount(); ++i) {
-        if (matrix->getStartNode() == i)
-            continue;
+            helpVector.push_back(source[i]);
+        }
 
-        helpVector.push_back(i);
+        for (int i = 1; i < matrix->getNodesCount()/2; ++i) {
+            randomPosition = gen.getNumber(0,(int)helpVector.size() - 1);
+            source[i] = helpVector.at(randomPosition);
+            helpVector.erase(helpVector.begin() + randomPosition);
+        }
     }
-    source[0] = matrix->getStartNode();
-    for (int i = 1; i < matrix->getNodesCount(); ++i) {
-        randomPosition = gen.getNumber(0,(int)helpVector.size() - 1);
-        source[i] = helpVector.at(randomPosition);
-        helpVector.erase(helpVector.begin() + randomPosition);
-    }
-    source[matrix->getNodesCount()] = matrix->getStartNode();
+    else //jeśli 1 to losuj drugą część ścieżki
+    {
+        for (int i = matrix->getNodesCount()/2; i < matrix->getNodesCount(); ++i) {
+            helpVector.push_back(source[i]);
+        }
 
-//    if (gen.getNumber(0,1))
-//    {
-//        for (int i = 0; i < matrix->getNodesCount()/2; ++i) {
-//            if (matrix->getStartNode() == i)
-//                continue;
-//
-//            helpVector.push_back(source[i]);
-//        }
-//
-//        for (int i = 1; i < matrix->getNodesCount()/2; ++i) {
-//            randomPosition = gen.getNumber(0,(int)helpVector.size() - 1);
-//            source[i] = helpVector.at(randomPosition);
-//            helpVector.erase(helpVector.begin() + randomPosition);
-//        }
-//    }
-//    else //jeśli 1 to losuj drugą część ścieżki
-//    {
-//        for (int i = matrix->getNodesCount()/2; i < matrix->getNodesCount(); ++i) {
-//            helpVector.push_back(source[i]);
-//        }
-//
-//        for (int i = matrix->getNodesCount()/2; i < matrix->getNodesCount(); ++i) {
-//            randomPosition = gen.getNumber(0,(int)helpVector.size() - 1);
-//            source[i] = helpVector.at(randomPosition);
-//            helpVector.erase(helpVector.begin() + randomPosition);
-//        }
-//    }
+        for (int i = matrix->getNodesCount()/2; i < matrix->getNodesCount(); ++i) {
+            randomPosition = gen.getNumber(0,(int)helpVector.size() - 1);
+            source[i] = helpVector.at(randomPosition);
+            helpVector.erase(helpVector.begin() + randomPosition);
+        }
+    }
 
 }
 
@@ -311,6 +279,18 @@ std::vector<std::vector<double>> SimulatedAnnealing::getPathChanging() {
 
 bool SimulatedAnnealing::isToChange(int diff, double temp) {
     return exp(diff/temp) >= generator.randomZeroToOne();
+}
+
+double SimulatedAnnealing::getTempStart() {
+    return temperatureStart;
+}
+
+double SimulatedAnnealing::getTempEnd() {
+    return temperature;
+}
+
+int SimulatedAnnealing::getL() {
+    return L;
 }
 
 

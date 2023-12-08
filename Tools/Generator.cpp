@@ -17,3 +17,9 @@ int Generator::getNumber(int min, int max) {
 double Generator::randomZeroToOne() {
     return distDouble(gen);
 }
+double Generator::randomDouble(double min, double max) {
+    distDouble.param(uniform_real_distribution<>::param_type(min,max));
+    double valReturn = distDouble(gen);
+    distDouble.param(uniform_real_distribution<>::param_type(0.0,1.0));
+    return valReturn;
+}

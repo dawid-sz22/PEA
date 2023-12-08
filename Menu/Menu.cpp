@@ -172,12 +172,12 @@ void Menu::showMenuAutomatic() {
             case 6:
             {
                 int typeNeighborhood = 1;
-                double a= 0.9999;
                 int iterations = 1;
                 string fileNames[] = {"../Files/ftv55.atsp","../Files/ftv170.atsp","../Files/rbg358.atsp"};
                 int timeData[] = {120,240,360};
+                double a[] = {0.99,0.999,0.9999};
 //                int timeData[] = {10,20,30};
-                cout << "\nPodaj typ sąsiedztwa (1-SWAP,2-INSERT,3-INVERT,0-ALL): ";
+                cout << "\nPodaj a (1-0.99,2-0.999,3-0.9999,0-ALL): ";
                 cin >> typeNeighborhood;
                 if (typeNeighborhood<0 || typeNeighborhood>3)
                 {
@@ -187,7 +187,7 @@ void Menu::showMenuAutomatic() {
                 }
                 cout << "\nPodaj max iteracji bez zmian: ";
                 cin >> iterations;
-                autoSA(fileNames, timeData, iterations, a, 333, typeNeighborhood, 3);
+                autoSA(fileNames, timeData,a,typeNeighborhood,3);
             }
                 break;
             case 0:
@@ -389,6 +389,9 @@ void Menu::showMenuManualM() {
     int aspiration = 0;
     //SA
     double a = 0.999;
+    double b = 0.999;
+    int c = 5;
+    double d = 0.999;
     int iterationsWithNoChangeSA = 1000;
 
     int bestKnownResult = -1;
@@ -402,7 +405,7 @@ void Menu::showMenuManualM() {
     {
         cout << "1. Wczytaj graf z pliku\n";
         cout << "2. Wprowadz kryteria (TS: " << stop << "s Stop, MAXIterationsNoChange = " << iterationsWithNoChange << ", k = " << k <<", aspirationPlus = " <<aspiration
-        <<")\n                     (SA: " << stop << "s Stop, MAXIterationsNoChange = " << iterationsWithNoChangeSA <<", a = " << a << ")\n";
+        <<")\n                     (SA: " << stop << "s Stop, MAXIterationsNoChange = " << iterationsWithNoChangeSA <<", a = " << a <<", b = " << b <<", c = " << c <<", d = " << d <<")\n";
         cout << "3. Wybor sasiedztwa ("<<typeN<<")\n";
         cout << "4. Tabu Search\n";
         cout << "5. SimulatedAnnealing\n";
@@ -448,8 +451,14 @@ void Menu::showMenuManualM() {
                     case 2:
                         cout << "\nPodaj a, gdzie T+1 = a * T: ";
                         cin >> a;
-                        cout << "\nPodaj maksymalna ilosc iteracji bez zmian: ";
-                        cin >> iterationsWithNoChangeSA;
+//                        cout << "\nPodaj b: ";
+//                        cin >> b;
+//                        cout << "\nPodaj c: ";
+//                        cin >> c;
+//                        cout << "\nPodaj d: ";
+//                        cin >> d;
+////                        cout << "\nPodaj maksymalna ilosc iteracji bez zmian: ";
+////                        cin >> iterationsWithNoChangeSA;
                         break;
                     default:
                         cout << endl << "Podano niepoprawna opcje!" << endl;
@@ -523,7 +532,7 @@ void Menu::showMenuManualM() {
                     else
                         bestKnownResult = -1;
 
-                    SimulatedAnnealing* sa = new SimulatedAnnealing(matrix,bestKnownResult,stop,typeNeigh,iterationsWithNoChangeSA,a,300);
+                    SimulatedAnnealing* sa = new SimulatedAnnealing(matrix,bestKnownResult,stop,typeNeigh,a);
 
                     sa->start();
                     path = sa->getShortestPath();
@@ -556,8 +565,10 @@ void Menu::showMenuManualM() {
                             for (int i = 0; i < matrix->getNodesCount(); i++) {
                                 //zliczanie całej wartości ścieżki. Jeśli dojdziemy do ostatniego wierzchołka w ścieżce, policz powrót
                                 helpCount += matrix->getWsk()[path2[i]][path2[i + 1]];
+                                cout << path2[i] << "->";
                             }
-                            cout << "KOSZT: " << helpCount;
+                            cout << path2[matrix->getNodesCount()];
+                            cout << "\nKOSZT: " << helpCount;
                             cout << endl;
                         } else
                             cout << "ERROR IN READ" << endl;
@@ -760,7 +771,7 @@ void Menu::autoTS(string data[], int timeData[], int iterationsNoChange, double 
     }
     file.close();
 }
-void Menu::autoSA(std::string data[], int timeData[], int iterationsNoChange, double a, int L, int typeNeigh,int dataCount)
+void Menu::autoSA(std::string data[], int timeData[], double* a, int typeNeigh,int dataCount)
 {
     fstream file;
     SimulatedAnnealing* sa;
@@ -769,53 +780,40 @@ void Menu::autoSA(std::string data[], int timeData[], int iterationsNoChange, do
     vector<vector<double>> bestPathChanging;
     int bestPathValue = INT32_MAX;
     int timeBest= 0;
+    int L = 0;
     int l = 0;
+    double tempStart = 0.0;
+    double tempEnd = 0.0;
 
     if (typeNeigh == 0)
     {
-        l = 1;
+        l = 0;
         typeNeigh = 3;
     }
     else
         l = typeNeigh;
 
     file.open("../Files/Output/test_SA.txt",ios::out | ios::app);
-    //nazwa pliku;najlepsze rozwizanie;czas;sąsiedztwo;MAXiteracjeNoChange;Kadencja;VALUE1;TIME1;VALUE2;TIME2....
-    for (; l <= typeNeigh; ++l) {
+    //nazwa pliku;najlepsze rozwizanie;czas;rozmiar ery;a;TempSTART;TempEND;VALUE1;TIME1;VALUE2;TIME2....
+    for (; l < typeNeigh; ++l) {
         for (int i = 0; i < dataCount; ++i) {
             file << data[i] << ';';
             matrix = FileClass::matrixFromFile(data[i]);
             bestPath.clear();
             bestPath.resize(matrix->getNodesCount() + 1);
-//
-//            if (data[i].find("ftv55") != -1)
-//            {
-//                iterationsNoChange = 150;
-//                p = 0.65;
-//                aspiration = 0;
-//            }
-//            else if (data[i].find("ftv170") != -1)
-//            {
-//                iterationsNoChange = 240;
-//                p = 3.4;
-//                aspiration = 60;
-//            }
-//            else if (data[i].find("rbg358") != -1)
-//            {
-//                iterationsNoChange = 290;
-//                p = 2;
-//                aspiration = 20;
-//            }
 
             for (int k = 0; k < 10; ++k) {
                 cout << "TEST (SA): " << data[i] << ", " << k << " proba: ";
-                sa = new SimulatedAnnealing(matrix,-1,timeData[i],l,iterationsNoChange,a,L);
+                sa = new SimulatedAnnealing(matrix,-1,timeData[i],2,a[l]);
                 sa->start();
                 if (sa->getPathValue() < bestPathValue) {
                     bestPathValue = sa->getPathValue();
                     timeBest = sa->getTime();
                     bestPath = sa->getShortestPath();
                     bestPathChanging = sa->getPathChanging();
+                    tempStart = sa->getTempStart();
+                    tempEnd = sa->getTempEnd();
+                    L = sa->getL();
                 }
                 cout << "X\n";
                 delete sa;
@@ -832,7 +830,7 @@ void Menu::autoSA(std::string data[], int timeData[], int iterationsNoChange, do
             else
                 cout << "ERROR IN SAVE\n";
 
-            file << bestPathValue << ";" << timeBest << ";" << l << ";" << iterationsNoChange << ";" << a <<";" <<L<<";";
+            file << bestPathValue << ";" << timeBest << ";" << L << ";" << a[l] <<";" << tempStart << ";" << tempEnd <<";";
 
             for (vector<double> g: bestPathChanging) {
                 file << g.at(0) << ";" << g.at(1) <<";";

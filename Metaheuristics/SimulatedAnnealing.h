@@ -16,23 +16,25 @@ class SimulatedAnnealing {
     double timeWhenBest;
     int neighborhoodType;    ///1 -  SWAP ; 2 - INSERT ; 3 - INVERT
     int bestKnownResult;    //znane optymalne rozwiązanie, do porównania wyników
-    int iterationsWithNoChangeMAX;
-    int iterationsWithNoChange;
     int iterationsWithChange;
     double temperature;
     double temperatureStart;
+    int L;                  //długość epoki
+
     double a;               //współczynnik schładzanie (Temp + 1 = a*temp), gdzie a < 1
-    int L;                  //liczba epok
     Generator generator;    //losowanie
 
 public:
-    SimulatedAnnealing(AdjacencyMatrix* matrix, int bestKnownResult, double timeStop, int neighborhoodType, int MAXiterationsNoChange, double a, int L);
+    SimulatedAnnealing(AdjacencyMatrix* matrix, int bestKnownResult, double timeStop, int neighborhoodType, double a);
     void greedyRoute();
     void start();
     int countPath(int tempValue, int I, int J, std::vector<int> &source);
     int countPath(std::vector<int> &source);
     void printResults();
     int getPathValue();
+    double getTempStart();
+    double getTempEnd();
+    int getL();
     std::vector<int> getShortestPath();
     int getTime();
     std::vector<std::vector<double>> getPathChanging();
