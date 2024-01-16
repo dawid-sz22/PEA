@@ -20,7 +20,6 @@ class SimulatedAnnealing {
     double temperature;
     double temperatureStart;
     int L;                  //długość epoki
-
     double a;               //współczynnik schładzanie (Temp + 1 = a*temp), gdzie a < 1
     Generator generator;    //losowanie
 

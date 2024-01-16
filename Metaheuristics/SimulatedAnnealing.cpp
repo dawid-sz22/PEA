@@ -130,7 +130,7 @@ void SimulatedAnnealing::start() {
     temperatureStart = shortestPathValue * 10;
     temperature = temperatureStart;
     ///ERA SIZE
-    L = matrix->getNodesCount()*matrix->getNodesCount()/2;
+    L = 500;
 
     //Przepisanie najlepszej aktualnej ścieżki do tymczasowej ścieżki
     vector<int> currentRoute(matrix->getNodesCount() + 1,0);
@@ -278,7 +278,7 @@ std::vector<std::vector<double>> SimulatedAnnealing::getPathChanging() {
 }
 
 bool SimulatedAnnealing::isToChange(int diff, double temp) {
-    return exp(diff/temp) >= generator.randomZeroToOne();
+    return exp(-diff/temp) >= generator.randomZeroToOne();
 }
 
 double SimulatedAnnealing::getTempStart() {

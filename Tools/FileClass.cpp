@@ -87,7 +87,6 @@ AdjacencyMatrix *FileClass::matrixFromFile(const string& fileName) {
         {
             int* tab = new int[1];
             AdjacencyMatrix* matrix = nullptr;
-            file.open(fileName.c_str());
 
             if(file.is_open())
             {

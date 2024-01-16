@@ -1,12 +1,11 @@
 #include "Menu.h"
-#include "../Graphs/AdjacencyMatrix.h"
 #include "../Tools/FileClass.h"
-#include "../Tools/Timer.h"
 #include "../Algorithms/BranchAndBound.h"
 #include "../Algorithms/BruteForce.h"
 #include "../Algorithms/DynamicPrograming.h"
 #include "../Metaheuristics/TabuSearch.h"
 #include "../Metaheuristics/SimulatedAnnealing.h"
+#include "../Metaheuristics/Genetic/GeneticAlgorithm.h"
 #include <iostream>
 #include <fstream>
 #include <thread>
@@ -19,8 +18,9 @@ void Menu::showMenu()
     do {
         cout << "Asymetryczny problem komiwojazera (ATSP)\n";
         cout << "1. Testy manualne (Algorytmy dokladne)\n";
-        cout << "2. Testy manualne (Metaheurystyki)\n";
-        cout << "3. Testy automatyczne\n";
+        cout << "2. Testy manualne (Tabu Search. SimulatedAnnealing)\n";
+        cout << "3. Testy manualne (Genetic Algorithm)\n";
+        cout << "4. Testy automatyczne\n";
         cout << "0. Zakoncz program\n";
         cout << "Wybierz opcje: ";
 
@@ -35,6 +35,9 @@ void Menu::showMenu()
                 Menu::showMenuManualM();
                 break;
             case 3:
+                Menu::showMenuManualGA();
+                break;
+            case 4:
                 Menu::showMenuAutomatic();
                 break;
             case 0:
@@ -58,6 +61,7 @@ void Menu::showMenuAutomatic() {
         cout << "4. All\n";
         cout << "5. Tabu Search\n";
         cout << "6. SA\n";
+        cout << "7. GA\n";
         cout << "0. Wroc\n";
         cout << "Wybierz opcje: ";
         cin >> chooseOption; //wybrana opcje
@@ -176,7 +180,7 @@ void Menu::showMenuAutomatic() {
                 string fileNames[] = {"../Files/ftv55.atsp","../Files/ftv170.atsp","../Files/rbg358.atsp"};
                 int timeData[] = {120,240,360};
                 double a[] = {0.99,0.999,0.9999};
-//                int timeData[] = {10,20,30};
+//                int timeData[] = {240};
                 cout << "\nPodaj a (1-0.99,2-0.999,3-0.9999,0-ALL): ";
                 cin >> typeNeighborhood;
                 if (typeNeighborhood<0 || typeNeighborhood>3)
@@ -188,6 +192,79 @@ void Menu::showMenuAutomatic() {
                 cout << "\nPodaj max iteracji bez zmian: ";
                 cin >> iterations;
                 autoSA(fileNames, timeData,a,typeNeighborhood,3);
+            }
+                break;
+            case 7:
+            {
+                int typeNeighborhood = 1;
+                int iterations = 1;
+                int option = 1;
+                int optiondata = 1;
+                vector<string> data = {"../Files/ftv47.atsp","../Files/ftv170.atsp","../Files/rbg403.atsp"};
+                vector<int> timeData = {120,240,360};
+                vector<int> populationSize = {};
+                vector<string> mutationStrategy = {"INSERT","SWAP"};
+                vector<double> mutationRate = {0.01,0.05,0.10};
+                vector<string> crossStrategy = {"OX"};
+                vector<double> crossRate = {0.8,0.5,0.7,0.9};
+                int bestKnown = 0;
+                cout << "\nPodaj max iteracji bez zmian: ";
+                cin >> iterations;
+                cout << "MENU AUTO \n";
+                cout << "1. CR=0.8, MR=0.01, POP=ALL3, MS=ALL, CS=ALL\n";
+                cout << "2. CR=0.8, MR=ALL3, POP=BESTfrom1, MS=BEST, CS=BEST\n";
+                cout << "3. CR=ALL3, MR=0.01, POP=BESTfrom1, MS=BEST, CS=BEST\n";
+                cout << "4. DATA (";
+                for (const string& dataE: data) {
+                    cout << dataE << ";";
+                }
+                cout << endl;
+                cin >> option;
+                switch (option) {
+                    case 1:
+                        autoGA(data, timeData,populationSize,mutationStrategy,{mutationRate[0]},
+                               crossStrategy, {crossRate[0]}, bestKnown, iterations);
+                        break;
+                    case 2:
+                        autoGA(data, timeData,{populationSize[0]},{mutationStrategy[0]},
+                               mutationRate,{crossStrategy[0]}, {crossRate[0]}, bestKnown, iterations);
+                        break;
+                    case 3:
+                        autoGA(data, timeData,{populationSize[0]},{mutationStrategy[0]},
+                               {mutationRate[0]},{crossStrategy[0]}, {crossRate[1],crossRate[2],crossRate[3]},
+                               bestKnown, iterations);
+                        break;
+                    case 4:
+                        cout << "1. ftv47\n";
+                        cout << "2. ftv170\n";
+                        cout << "3. rbg403\n";
+                        cout << "4. ALL";
+                        cin >> optiondata;
+                        switch (optiondata) {
+                            case 1:
+                                data = {"../Files/ftv47.atsp"};
+                                timeData = {120};
+                                break;
+                            case 2:
+                                data = {"../Files/ftv170.atsp"};
+                                timeData = {240};
+                                break;
+                            case 3:
+                                data = {"../Files/rbg403.atsp"};
+                                timeData = {360};
+                                break;
+                            case 4:
+                                data = {"../Files/ftv47.atsp","../Files/ftv170.atsp","../Files/rbg403.atsp"};
+                                timeData = {120,240,360};
+                                break;
+                            default:
+                                cout <<" ZLY NUMER\n";
+                                break;
+                        }
+                    default:
+                        cout <<" ZLY NUMER\n";
+                        break;
+                }
             }
                 break;
             case 0:
@@ -405,7 +482,7 @@ void Menu::showMenuManualM() {
     {
         cout << "1. Wczytaj graf z pliku\n";
         cout << "2. Wprowadz kryteria (TS: " << stop << "s Stop, MAXIterationsNoChange = " << iterationsWithNoChange << ", k = " << k <<", aspirationPlus = " <<aspiration
-        <<")\n                     (SA: " << stop << "s Stop, MAXIterationsNoChange = " << iterationsWithNoChangeSA <<", a = " << a <<", b = " << b <<", c = " << c <<", d = " << d <<")\n";
+        <<")\n                     (SA: " << stop << "s Stop, a = " << a <<")\n";
         cout << "3. Wybor sasiedztwa ("<<typeN<<")\n";
         cout << "4. Tabu Search\n";
         cout << "5. SimulatedAnnealing\n";
@@ -451,14 +528,6 @@ void Menu::showMenuManualM() {
                     case 2:
                         cout << "\nPodaj a, gdzie T+1 = a * T: ";
                         cin >> a;
-//                        cout << "\nPodaj b: ";
-//                        cin >> b;
-//                        cout << "\nPodaj c: ";
-//                        cin >> c;
-//                        cout << "\nPodaj d: ";
-//                        cin >> d;
-////                        cout << "\nPodaj maksymalna ilosc iteracji bez zmian: ";
-////                        cin >> iterationsWithNoChangeSA;
                         break;
                     default:
                         cout << endl << "Podano niepoprawna opcje!" << endl;
@@ -575,6 +644,132 @@ void Menu::showMenuManualM() {
                     }
                 } else
                     cout <<"BRAK MACIERZY\n";
+                break;
+            case 0:
+                system("cls");
+                break;
+            default:
+                cout << endl << "Podano niepoprawna opcje!" << endl;
+                break;
+        }
+        cout << endl << endl;
+    } while (chooseOption);
+
+    //usuń tablice po zakonczeniu
+    delete matrix;
+}
+void Menu::showMenuManualGA() {
+    AdjacencyMatrix* matrix = nullptr;
+    Timer timer;
+    int chooseOption = 0;
+
+    /// WSPÓŁCZYNNIKI
+    double stop = 30.0;
+    double alphaMutation = 0.01;
+    double alphaCross = 0.85;
+    int populationSize = 100;
+    int tournamentSize = 10;
+    int crossType = 0;
+    int mutationType = 0;
+    string crossTypeS = "OX";
+    string mutationTypeS = "INSERT";
+
+    int bestKnownResult = -1;
+
+    vector<int> path;
+    int help = 0;
+    string filename;
+
+    do
+    {
+        cout << "1. Wczytaj graf z pliku\n";
+        cout << "2. Genetic Algorithm\n";
+        cout << "3. Kryterium stopu ("<<stop<<" s)\n";
+        cout << "4. Wielkosc populacji poczatkowej ("<<populationSize<<")\n";
+        cout << "5. Wielkosc turnieju ("<<tournamentSize<<")\n";
+        cout << "6. Wspolczynnik mutacji ("<<alphaMutation<<")\n";
+        cout << "7. Wspolczynnik krzyzowania ("<<alphaCross<<")\n";
+        cout << "8. Metoda krzyzowania ("<<crossTypeS<<")\n";
+        cout << "9. Metoda mutacji ("<<mutationTypeS<<")\n";
+        cout << "0. Wroc\n";
+        cout << "Wybierz opcje: ";
+        cin >> chooseOption; //wybrana opcje
+
+        switch (chooseOption)
+        {
+            case 1:
+                cout << "Pobieranie grafu z pliku tekstowego. Podaj nazwe pliku: ";
+                {
+                    cin >> filename;
+                    AdjacencyMatrix* newMatrix;
+                    newMatrix = FileClass::matrixFromFile(filename);
+                    if (newMatrix != nullptr)   // jeśli nie wystąpił błąd, usuń macierz i zastąp ją nową
+                    {
+                        delete matrix;
+                        matrix = newMatrix;
+                    }
+                    else
+                        cout<< "ERROR IN READ"<<endl;
+                }
+                break;
+            case 2: // GA
+            {
+                if (matrix == nullptr) {
+                    cout << "NIE WCZYTANO GRAFU!\n";
+                } else {
+                    if (filename.find("ftv55") != -1)
+                        bestKnownResult = 1608;
+                    else if (filename.find("ftv170") != -1)
+                        bestKnownResult = 2755;
+                    else if (filename.find("rbg358") != -1)
+                        bestKnownResult = 1163;
+                    else
+                        bestKnownResult = -1;
+
+                    auto * ga = new GeneticAlgorithm(matrix,alphaMutation,alphaCross,populationSize,crossTypeS,mutationTypeS,stop,bestKnownResult);
+
+                    ga->startAlgorithm();
+                    ga->printResults();
+                    delete ga;
+                }
+            }
+                break;
+            case 3: // STOP
+                cout << "\nPodaj czas w sekundach: ";
+                cin >> stop;
+                break;
+            case 4: // POPULACJA
+                cout << "\nPodaj wielkosc populacji: ";
+                cin >> populationSize;
+                break;
+            case 5: // POPULACJA
+                cout << "\nPodaj wielkosc turnieju: ";
+                cin >> tournamentSize;
+                break;
+            case 6: // MUTACJA ALPHA
+                cout << "\nPodaj wpolczynnik mutacji: ";
+                cin >> alphaMutation;
+                break;
+            case 7: // KRZYŻOWKA ALPHA
+                cout << "\nPodaj wpolczynnik krzyzowania: ";
+                cin >> alphaCross;
+                break;
+            case 8: // METODA KRZYŻOWANIA
+                break;
+            case 9: // METODA MUTACJI
+                cout << "\n1. INSERT\n";
+                cout << "2. SWAP\n";
+                cin >> mutationType;
+            switch (mutationType) {
+                case 1:
+                    mutationTypeS = "INSERT";
+                    break;
+                case 2:
+                    mutationTypeS = "SWAP";
+                    break;
+                default:
+                    cout <<"zly numer\n\n";
+            }
                 break;
             case 0:
                 system("cls");
@@ -802,7 +997,7 @@ void Menu::autoSA(std::string data[], int timeData[], double* a, int typeNeigh,i
             bestPath.clear();
             bestPath.resize(matrix->getNodesCount() + 1);
 
-            for (int k = 0; k < 10; ++k) {
+            for (int k = 0; k < 1; ++k) {
                 cout << "TEST (SA): " << data[i] << ", " << k << " proba: ";
                 sa = new SimulatedAnnealing(matrix,-1,timeData[i],2,a[l]);
                 sa->start();
@@ -830,7 +1025,7 @@ void Menu::autoSA(std::string data[], int timeData[], double* a, int typeNeigh,i
             else
                 cout << "ERROR IN SAVE\n";
 
-            file << bestPathValue << ";" << timeBest << ";" << L << ";" << a[l] <<";" << tempStart << ";" << tempEnd <<";";
+            file << bestPathValue << ";" << timeBest << ";" << L << ";" << a[l]<<";" << tempStart << ";" << tempEnd <<";";
 
             for (vector<double> g: bestPathChanging) {
                 file << g.at(0) << ";" << g.at(1) <<";";
@@ -838,6 +1033,78 @@ void Menu::autoSA(std::string data[], int timeData[], double* a, int typeNeigh,i
             file << endl;
 
             bestPathValue = INT32_MAX;
+        }
+    }
+    file.close();
+}
+
+void Menu::autoGA(vector<string>& data, const vector<int>& timeData, const vector<int>& populationSize,
+                  const vector<string>& mutationStrategy, const vector<double>& mutationRate, const vector<string>& crossStrategy,
+                  const vector<double>& crossRate, int bestKnown, int iterations)
+{
+    fstream file;
+    GeneticAlgorithm* ga;
+    AdjacencyMatrix* matrix;
+    vector<int> bestPath;
+    vector<vector<double>> bestPathChanging;
+    int bestPathValue = INT32_MAX;
+    double timeBest= 0;
+    int tournamentSize = 10;
+
+    file.open("../Files/Output/test_GA.txt",ios::out | ios::app);
+    //nazwa pliku;najlepsze rozwizanie;czas;rozmiar populacji;rozmiar turnieju;mutationStrategy;mutationRate;crossStrategy;crossRate;VALUE1;TIME1;VALUE2;TIME2....
+    for (int i : populationSize) {
+        for (const auto & j : mutationStrategy) {
+            for (double k : mutationRate) {
+                for (const auto & l : crossStrategy) {
+                    for (double m : crossRate) {
+                        for (int n = 0; n < data.size(); ++n) {
+                            file << data[n] << ';';
+                            matrix = FileClass::matrixFromFile(data[n]);
+                            bestPath.clear();
+                            bestPath.resize(matrix->getNodesCount() + 1);
+                            for (int i1 = 0; i1 < iterations; ++i1) {
+                                cout << "TEST (GA): " << data[n] << ", " << i1 << " proba: ";
+                                ga = new GeneticAlgorithm(matrix,k,m,
+                                                          i,l,
+                                                          j,timeData[n],bestKnown);
+                                ga->startAlgorithm();
+                                if (ga->bestKnownResult < bestPathValue) {
+                                    bestPathValue = ga->bestKnownResult;
+                                    timeBest = ga->bestValueTime;
+                                    bestPath = ga->bestTour.nodes;
+                                    bestPathChanging = ga->shortestPathChanging;
+                                    tournamentSize = ga->tournamentSize;
+                                }
+                                cout << "X\n";
+                                delete ga;
+                            }
+                            string s = "../Files/Output/ga_";
+                            size_t pos = data[n].find_last_of('/');
+                            size_t pos2 = data[n].find_last_of('.');
+                            s += data[n].substr(pos + 1, pos2);
+                            s += "_";
+                            s += std::to_string(bestPathValue);
+                            s += ".txt";
+                            if (FileClass::saveToFile(s, bestPath, matrix->getNodesCount() + 1))
+                                cout << "ZAPISANO DO PLIKU\n";
+                            else
+                                cout << "ERROR IN SAVE\n";
+
+                            //najlepsze rozwizanie;czas;rozmiar populacji;rozmiar turnieju;mutationStrategy;mutationRate;crossStrategy;crossRate;VALUE1;TIME1;VALUE2;TIME2....
+                            file << bestPathValue << ";" << timeBest << ";" << i << ";" << tournamentSize
+                            <<";" << j << ";" << k <<";" << l <<";" << m <<";";
+
+                            for (vector<double> g: bestPathChanging) {
+                                file << g.at(0) << ";" << g.at(1) <<";";
+                            }
+                            file << endl;
+
+                            bestPathValue = INT32_MAX;
+                        }
+                    }
+                }
+            }
         }
     }
     file.close();
