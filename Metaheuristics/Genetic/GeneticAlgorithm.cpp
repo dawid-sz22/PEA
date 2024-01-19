@@ -76,6 +76,8 @@ void GeneticAlgorithm::checkBestTour(double time) {
         bestTour = helpTour;
         shortestPathChanging.push_back({static_cast<double>(bestCost),(time)});
         bestValueTime = time;
+        if (bestKnownResult != -1)
+            error = (abs(bestCost-bestKnownResult)/(double)bestKnownResult)*100;
     }
 }
 

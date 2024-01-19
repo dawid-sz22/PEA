@@ -194,76 +194,84 @@ void Menu::showMenuAutomatic() {
                 autoSA(fileNames, timeData,a,typeNeighborhood,3);
             }
                 break;
-            case 7:
-            {
+            case 7: {
                 int typeNeighborhood = 1;
                 int iterations = 1;
                 int option = 1;
                 int optiondata = 1;
-                vector<string> data = {"../Files/ftv47.atsp","../Files/ftv170.atsp","../Files/rbg403.atsp"};
-                vector<int> timeData = {120,240,360};
-                vector<int> populationSize = {};
-                vector<string> mutationStrategy = {"INSERT","SWAP"};
-                vector<double> mutationRate = {0.01,0.05,0.10};
-                vector<string> crossStrategy = {"OX"};
-                vector<double> crossRate = {0.8,0.5,0.7,0.9};
+                vector<string> data = {"../Files/ftv47.atsp", "../Files/ftv170.atsp", "../Files/rbg403.atsp"};
+                vector<int> bestKnownData = {1776,2755,2465};
+                vector<int> timeData = {120, 240, 360};
+                vector<int> populationSize = {403};
+                vector<string> mutationStrategy = {"INSERT", "SWAP"};
+                vector<double> mutationRate = {0.01, 0.05, 0.10};
+                vector<string> crossStrategy = {"PMX"};
+                vector<double> crossRate = {0.8, 0.5, 0.7, 1720.9};
                 int bestKnown = 0;
                 cout << "\nPodaj max iteracji bez zmian: ";
                 cin >> iterations;
-                cout << "MENU AUTO \n";
-                cout << "1. CR=0.8, MR=0.01, POP=ALL3, MS=ALL, CS=ALL\n";
-                cout << "2. CR=0.8, MR=ALL3, POP=BESTfrom1, MS=BEST, CS=BEST\n";
-                cout << "3. CR=ALL3, MR=0.01, POP=BESTfrom1, MS=BEST, CS=BEST\n";
-                cout << "4. DATA (";
-                for (const string& dataE: data) {
-                    cout << dataE << ";";
-                }
-                cout << endl;
-                cin >> option;
-                switch (option) {
-                    case 1:
-                        autoGA(data, timeData,populationSize,mutationStrategy,{mutationRate[0]},
-                               crossStrategy, {crossRate[0]}, bestKnown, iterations);
-                        break;
-                    case 2:
-                        autoGA(data, timeData,{populationSize[0]},{mutationStrategy[0]},
-                               mutationRate,{crossStrategy[0]}, {crossRate[0]}, bestKnown, iterations);
-                        break;
-                    case 3:
-                        autoGA(data, timeData,{populationSize[0]},{mutationStrategy[0]},
-                               {mutationRate[0]},{crossStrategy[0]}, {crossRate[1],crossRate[2],crossRate[3]},
-                               bestKnown, iterations);
-                        break;
-                    case 4:
-                        cout << "1. ftv47\n";
-                        cout << "2. ftv170\n";
-                        cout << "3. rbg403\n";
-                        cout << "4. ALL";
-                        cin >> optiondata;
-                        switch (optiondata) {
-                            case 1:
-                                data = {"../Files/ftv47.atsp"};
-                                timeData = {120};
-                                break;
-                            case 2:
-                                data = {"../Files/ftv170.atsp"};
-                                timeData = {240};
-                                break;
-                            case 3:
-                                data = {"../Files/rbg403.atsp"};
-                                timeData = {360};
-                                break;
-                            case 4:
-                                data = {"../Files/ftv47.atsp","../Files/ftv170.atsp","../Files/rbg403.atsp"};
-                                timeData = {120,240,360};
-                                break;
-                            default:
-                                cout <<" ZLY NUMER\n";
-                                break;
+                while (option) {
+                    cout << "MENU AUTO \n";
+                    cout << "1. CR=0.8, MR=0.01, POP=ALL3, MS=ALL, CS=ALL\n";
+                    cout << "2. CR=0.8, MR=ALL3, POP=BESTfrom1, MS=BEST, CS=BEST\n";
+                    cout << "3. CR=ALL3, MR=0.01, POP=BESTfrom1, MS=BEST, CS=BEST\n";
+                    cout << "4. DATA (";
+                    for (const string &dataE: data) {
+                        cout << dataE << ";";
+                    }
+                    cout << endl;
+                    cin >> option;
+                    switch (option) {
+                        case 1:
+                            autoGA(data, timeData, populationSize, mutationStrategy, {mutationRate[0]},
+                                   crossStrategy, {crossRate[0]}, bestKnownData, iterations);
+                            break;
+                        case 2:
+                            autoGA(data, timeData, {populationSize}, {mutationStrategy[0]},
+                                   mutationRate, {crossStrategy[0]}, {crossRate[0]}, bestKnownData, iterations);
+                            break;
+                        case 3:
+                            autoGA(data, timeData, {populationSize}, {mutationStrategy[0]},
+                                   {mutationRate[0]}, {crossStrategy[0]}, {crossRate[1], crossRate[2], crossRate[3]},
+                                   bestKnownData, iterations);
+                            break;
+                        case 4: {
+                            cout << "1. ftv47\n";
+                            cout << "2. ftv170\n";
+                            cout << "3. rbg403\n";
+                            cout << "4. ALL\n";
+                            cin >> optiondata;
+                            switch (optiondata) {
+                                case 1:
+                                    data = {"../Files/ftv47.atsp"};
+                                    timeData = {120};
+                                    bestKnownData = {1776};
+                                    break;
+                                case 2:
+                                    data = {"../Files/ftv170.atsp"};
+                                    timeData = {240};
+                                    bestKnownData = {2755};
+                                    break;
+                                case 3:
+                                    data = {"../Files/rbg403.atsp"};
+                                    timeData = {360};
+                                    bestKnownData = {2465};
+                                    break;
+                                case 4:
+                                    data = {"../Files/ftv47.atsp", "../Files/ftv170.atsp", "../Files/rbg403.atsp"};
+                                    timeData = {120, 240, 360};
+                                    bestKnownData = {1776,2755,2465};
+                                    break;
+                                default:
+                                    cout << " ZLY NUMER\n";
+                                    break;
+                            }
                         }
-                    default:
-                        cout <<" ZLY NUMER\n";
-                        break;
+                            break;
+                        default:
+                            cout << " ZLY NUMER\n";
+                            break;
+                    }
                 }
             }
                 break;
@@ -723,6 +731,10 @@ void Menu::showMenuManualGA() {
                         bestKnownResult = 2755;
                     else if (filename.find("rbg358") != -1)
                         bestKnownResult = 1163;
+                    else if (filename.find("ftv47") != -1)
+                        bestKnownResult = 1776;
+                    else if (filename.find("rbg403") != -1)
+                        bestKnownResult = 2465;
                     else
                         bestKnownResult = -1;
 
@@ -755,6 +767,19 @@ void Menu::showMenuManualGA() {
                 cin >> alphaCross;
                 break;
             case 8: // METODA KRZYŻOWANIA
+                cout << "\n1. PMX\n";
+                cout << "2. OX\n";
+                cin >> crossType;
+                switch (crossType) {
+                    case 1:
+                        crossTypeS = "PMX";
+                        break;
+                    case 2:
+                        crossTypeS = "OX";
+                        break;
+                    default:
+                        cout <<"zly numer\n\n";
+                }
                 break;
             case 9: // METODA MUTACJI
                 cout << "\n1. INSERT\n";
@@ -1038,47 +1063,54 @@ void Menu::autoSA(std::string data[], int timeData[], double* a, int typeNeigh,i
     file.close();
 }
 
-void Menu::autoGA(vector<string>& data, const vector<int>& timeData, const vector<int>& populationSize,
+void Menu::autoGA(const vector<string>& data, const vector<int>& timeData, vector<int>& populationSize,
                   const vector<string>& mutationStrategy, const vector<double>& mutationRate, const vector<string>& crossStrategy,
-                  const vector<double>& crossRate, int bestKnown, int iterations)
-{
+                  const vector<double>& crossRate, const vector<int>& bestKnown, int iterations) {
     fstream file;
-    GeneticAlgorithm* ga;
-    AdjacencyMatrix* matrix;
+    GeneticAlgorithm *ga;
+    AdjacencyMatrix *matrix;
     vector<int> bestPath;
     vector<vector<double>> bestPathChanging;
     int bestPathValue = INT32_MAX;
-    double timeBest= 0;
+    double timeBest = 0;
+    double error = 0;
     int tournamentSize = 10;
 
-    file.open("../Files/Output/test_GA.txt",ios::out | ios::app);
+    file.open("../Files/Output/test_GA.txt", ios::out | ios::app);
     //nazwa pliku;najlepsze rozwizanie;czas;rozmiar populacji;rozmiar turnieju;mutationStrategy;mutationRate;crossStrategy;crossRate;VALUE1;TIME1;VALUE2;TIME2....
-    for (int i : populationSize) {
-        for (const auto & j : mutationStrategy) {
-            for (double k : mutationRate) {
-                for (const auto & l : crossStrategy) {
-                    for (double m : crossRate) {
-                        for (int n = 0; n < data.size(); ++n) {
+    for (int n = 0; n < data.size(); ++n) {
+        matrix = FileClass::matrixFromFile(data[n]);
+//        populationSize = {matrix->getNodesCount(),matrix->getNodesCount()*2,matrix->getNodesCount()*matrix->getNodesCount()};
+        for (const auto &j: mutationStrategy) {
+            for (double k: mutationRate) {
+                for (const auto &l: crossStrategy) {
+                    for (double m: crossRate) {
+                        for (int i: populationSize) {
                             file << data[n] << ';';
-                            matrix = FileClass::matrixFromFile(data[n]);
                             bestPath.clear();
                             bestPath.resize(matrix->getNodesCount() + 1);
+                            bestPathChanging.clear();
+                            error = 0.0;
                             for (int i1 = 0; i1 < iterations; ++i1) {
-                                cout << "TEST (GA): " << data[n] << ", " << i1 << " proba: ";
-                                ga = new GeneticAlgorithm(matrix,k,m,
-                                                          i,l,
-                                                          j,timeData[n],bestKnown);
+                                cout << "TEST (GA): " << data[n] << ";" << i << ";" << tournamentSize
+                                     << ";" << j << ";" << k << ";" << l << ";" << m
+                                     << ";" << i1 << " proba: ";
+                                ga = new GeneticAlgorithm(matrix, k, m,
+                                                          i, l,
+                                                          j, timeData[n], bestKnown[n]);
                                 ga->startAlgorithm();
                                 if (ga->bestKnownResult < bestPathValue) {
-                                    bestPathValue = ga->bestKnownResult;
+                                    bestPathValue = ga->bestCost;
                                     timeBest = ga->bestValueTime;
                                     bestPath = ga->bestTour.nodes;
                                     bestPathChanging = ga->shortestPathChanging;
                                     tournamentSize = ga->tournamentSize;
+                                    error = ga->error;
                                 }
                                 cout << "X\n";
                                 delete ga;
                             }
+
                             string s = "../Files/Output/ga_";
                             size_t pos = data[n].find_last_of('/');
                             size_t pos2 = data[n].find_last_of('.');
@@ -1091,12 +1123,12 @@ void Menu::autoGA(vector<string>& data, const vector<int>& timeData, const vecto
                             else
                                 cout << "ERROR IN SAVE\n";
 
-                            //najlepsze rozwizanie;czas;rozmiar populacji;rozmiar turnieju;mutationStrategy;mutationRate;crossStrategy;crossRate;VALUE1;TIME1;VALUE2;TIME2....
-                            file << bestPathValue << ";" << timeBest << ";" << i << ";" << tournamentSize
-                            <<";" << j << ";" << k <<";" << l <<";" << m <<";";
+                            //najlepsze rozwizanie;error;czas;rozmiar populacji;rozmiar turnieju;mutationStrategy;mutationRate;crossStrategy;crossRate;VALUE1;TIME1;VALUE2;TIME2....
+                            file << bestPathValue << ";" << error <<";"<< timeBest << ";" << i << ";" << tournamentSize
+                                 << ";" << j << ";" << k << ";" << l << ";" << m << ";";
 
                             for (vector<double> g: bestPathChanging) {
-                                file << g.at(0) << ";" << g.at(1) <<";";
+                                file << g.at(0) << ";" << g.at(1) << ";";
                             }
                             file << endl;
 

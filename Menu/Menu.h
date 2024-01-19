@@ -21,9 +21,9 @@ public:
     static void autoDP(int* data, int dataCount);
     static void autoTS(std::string data[], int timeData[], int iterationsNoChange, double k, int dataCount, int typeNeighborhood, int aspiration);
     static void autoSA(std::string data[], int timeData[], double* a, int typeNeighborhood, int dataCount);
-    static void autoGA(vector<string>& data, const vector<int>& timeData, const vector<int>& populationSize,
+    static void autoGA(const vector<string>& data, const vector<int>& timeData, vector<int>& populationSize,
                       const vector<string>& mutationStrategy, const vector<double>& mutationRate, const vector<string>& crossStrategy,
-                      const vector<double>& crossRate, int bestKnown, int iterations);
+                      const vector<double>& crossRate, const vector<int>& bestKnown, int iterations);
 };
 
 

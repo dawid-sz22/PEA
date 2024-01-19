@@ -26,6 +26,7 @@ public:
     Population population;
     std::vector<std::vector<double>> shortestPathChanging;
     double bestValueTime;
+    double error;
 
     GeneticAlgorithm(AdjacencyMatrix* matrix, double mutationRate, double crossRate, int populationSize, const std::string& crossoverStrategy,const std::string& mutationStrategy, double stopTime, int bestKnownResult);
     void startAlgorithm();

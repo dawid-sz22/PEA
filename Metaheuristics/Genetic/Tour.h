@@ -16,7 +16,6 @@ public:
     int getFitness();
     void correctFitness(AdjacencyMatrix* matrix);
     int getSize();
-    void setNode(int postion, int node);
 };
 
 
