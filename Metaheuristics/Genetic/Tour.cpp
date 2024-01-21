@@ -44,10 +44,6 @@ Tour::Tour(int size, AdjacencyMatrix* matrix) {
     correctFitness(matrix);
 }
 
-void Tour::setNode(int postion, int node) {
-    nodes[postion] = node;
-}
-
 Tour::Tour() {
 
 }
